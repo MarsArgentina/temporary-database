@@ -11,6 +11,15 @@ export declare type AddInvitesOptions = {
     deactivateMissing: boolean;
     overwriteMeta: boolean;
 };
+export declare type AddInvitesResult = {
+    found: InviteDocument[];
+    created: InviteDocument[];
+    error: {
+        email: string;
+        error: Error;
+    }[];
+    deactivated: number;
+};
 export declare type InviteItem = {
     email: string;
     meta?: string;
@@ -32,16 +41,9 @@ export declare class Invite {
     static getId(this: ReturnModelType<typeof Invite>, invite: Ref<Invite>): Types.ObjectId | undefined;
     static findExact(this: ReturnModelType<typeof Invite>, event: string, email: string): import("mongoose").QueryWithHelpers<DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject> | null, DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject>, import("@typegoose/typegoose/lib/types").BeAnObject, DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject>>;
     static addInvite(this: ReturnModelType<typeof Invite>, event: string, email: string): Promise<[DocumentType<Invite>, boolean]>;
-    static addInviteList(this: ReturnModelType<typeof Invite>, event: string, invites: InviteItem[], role: string, options?: Partial<AddInvitesOptions>): Promise<{
-        found: DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject>[];
-        created: DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject>[];
-        error: {
-            email: string;
-            error: Error;
-        }[];
-        deactivated: number;
-    }>;
+    static addInviteList(this: ReturnModelType<typeof Invite>, event: string, invites: InviteItem[], role: string, options?: Partial<AddInvitesOptions>): Promise<AddInvitesResult>;
     static fetchInvite(this: ReturnModelType<typeof Invite>, invite: Ref<Invite, Types.ObjectId>): Promise<DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject> | undefined>;
     static fetchAllInvites(this: ReturnModelType<typeof Invite>, invites: Ref<Invite, Types.ObjectId>[]): Promise<DocumentType<Invite, import("@typegoose/typegoose/lib/types").BeAnObject>[]>;
 }
+export declare type InviteDocument = DocumentType<Invite>;
 export declare const InviteModel: ReturnModelType<typeof Invite, import("@typegoose/typegoose/lib/types").BeAnObject>;

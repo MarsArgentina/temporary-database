@@ -1,8 +1,8 @@
 import * as xlsx from "xlsx";
 import { guaranteeBuffer } from "../helpers/guaranteeBuffer";
-import { getFulfilledResults } from "../helpers/getFulfilledResults";
+import { getFulfilledResults } from "../helpers/getResults";
 import { InviteItem, InviteModel } from "../models/invite";
-import { UserItem, UserModel } from "../models/user";
+import { UserDocument, UserItem, UserModel } from "../models/user";
 
 type ExcelData = {
   name: string;
@@ -50,7 +50,7 @@ export const parseOldData = async (
   return [users, invites];
 };
 
-type Overwrites = {
+export type Overwrites = {
   role: boolean;
   inviteMeta: boolean;
   userMeta: boolean;
@@ -60,7 +60,7 @@ type Overwrites = {
 export const importFromParsedOldData = async (
   users: UserItem[],
   invites: InviteItem[],
-  event = "nsac2020",
+  event = "NSAC-2020",
   overwrites: Partial<Overwrites> = {}
 ) => {
   overwrites = {
@@ -88,14 +88,14 @@ export const importFromParsedOldData = async (
   })
 
   return {
-    users: getFulfilledResults(usersResult),
+    users: getFulfilledResults(usersResult) as UserDocument[],
     invites: invitesResult,
   };
 };
 
 export const importFromOldData = async (
   file: Buffer | ArrayBuffer | string,
-  event = "nsac2020",
+  event = "NSAC-2020",
   overwrites: Partial<Overwrites> = {}
 ) => {
   const [users, invites] = await parseOldData(file);

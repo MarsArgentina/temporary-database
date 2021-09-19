@@ -40,6 +40,9 @@ export class User {
   @prop({ required: true, default: false })
   public inDiscord!: boolean;
 
+  @prop({ default: false })
+  public isUpdating?: boolean;
+
   @prop({ enum: AgeRange, type: Number, default: AgeRange.unspecified })
   public ageRange?: AgeRange;
 
@@ -72,10 +75,10 @@ export class User {
 
       if (revoked?._id !== this._id) {
         console.error(`Probably revoked an erroneous invite
-- The invite was: ${resolved.toString()}
-- The user that got revoked was: ${revoked?.toString()}
-- The user that had to be revoked was: ${this.toString()}}
-`);
+          - The invite was: ${resolved.toString()}
+          - The user that got revoked was: ${revoked?.toString()}
+          - The user that had to be revoked was: ${this.toString()}}
+        `);
       }
 
       this.resolvedInvites.splice(
@@ -175,6 +178,18 @@ export class User {
     });
   }
 
+  static startUpdate(this: ReturnModelType<typeof User>) {
+    return this.updateMany({}, { isUpdating: true }, { multi: true }).exec();
+  }
+
+  static finishUpdate(this: ReturnModelType<typeof User>) {
+    return this.updateMany(
+      { isUpdating: true },
+      { inDiscord: false },
+      { multi: true }
+    ).exec();
+  }
+
   static findFromDiscord(
     this: ReturnModelType<typeof User>,
     user: { id: string; displayName: string }
@@ -238,5 +253,7 @@ export class User {
     }).exec();
   }
 }
+
+export type UserDocument = DocumentType<User>;
 
 export const UserModel = getModelForClass(User);

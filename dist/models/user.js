@@ -85,7 +85,7 @@ var User = /** @class */ (function () {
                     case 2:
                         revoked = _a.sent();
                         if ((revoked === null || revoked === void 0 ? void 0 : revoked._id) !== this._id) {
-                            console.error("Probably revoked an erroneous invite\n- The invite was: " + resolved.toString() + "\n- The user that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n- The user that had to be revoked was: " + this.toString() + "}\n");
+                            console.error("Probably revoked an erroneous invite\n          - The invite was: " + resolved.toString() + "\n          - The user that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The user that had to be revoked was: " + this.toString() + "}\n        ");
                         }
                         this.resolvedInvites.splice(this.resolvedInvites.findIndex(function (invite) { return resolved.isEqual(invite); }), 1);
                         return [2 /*return*/, resolved];
@@ -172,6 +172,12 @@ var User = /** @class */ (function () {
             name: user.displayName,
             inDiscord: true,
         });
+    };
+    User.startUpdate = function () {
+        return this.updateMany({}, { isUpdating: true }, { multi: true }).exec();
+    };
+    User.finishUpdate = function () {
+        return this.updateMany({ isUpdating: true }, { inDiscord: false }, { multi: true }).exec();
     };
     User.findFromDiscord = function (user) {
         return this.findOne({ discordId: user.id });
@@ -264,6 +270,10 @@ var User = /** @class */ (function () {
         (0, typegoose_1.prop)({ required: true, default: false }),
         __metadata("design:type", Boolean)
     ], User.prototype, "inDiscord", void 0);
+    __decorate([
+        (0, typegoose_1.prop)({ default: false }),
+        __metadata("design:type", Boolean)
+    ], User.prototype, "isUpdating", void 0);
     __decorate([
         (0, typegoose_1.prop)({ enum: agerange_1.AgeRange, type: Number, default: agerange_1.AgeRange.unspecified }),
         __metadata("design:type", Number)

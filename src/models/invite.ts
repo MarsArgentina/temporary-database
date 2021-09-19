@@ -11,7 +11,7 @@ import { Types } from "mongoose";
 import { User, UserModel } from "./user";
 import { Group, GroupModel } from "./group";
 import { guaranteeError } from "../helpers/guaranteeError";
-import { getFulfilledResults } from "../helpers/getFulfilledResults";
+import { getFulfilledResults } from "../helpers/getResults";
 
 export type RevokeInviteOptions = {
   revokeFromUser?: boolean;
@@ -23,6 +23,13 @@ export type AddInvitesOptions = {
   deactivateMissing: boolean;
   overwriteMeta: boolean;
 };
+
+export type AddInvitesResult = {
+  found: InviteDocument[];
+  created: InviteDocument[];
+  error: {email: string, error: Error}[];
+  deactivated: number;
+}
 
 export type InviteItem = { email: string; meta?: string; role?: string };
 
@@ -94,9 +101,9 @@ export class Invite {
       if (this._id !== revoked?._id) {
         console.error(`Probably revoked an erroneous invite
           - The user was: ${user.toString()}
-          - The revoked that got revoked was: ${revoked?.toString()}
+          - The invite that got revoked was: ${revoked?.toString()}
           - The invite that had to be revoked was: ${this.toString()}}
-          `);
+        `);
       }
     }
 
@@ -192,10 +199,10 @@ export class Invite {
       ...options,
     };
 
-    const result = {
-      found: [] as DocumentType<Invite>[],
-      created: [] as DocumentType<Invite>[],
-      error: [] as { email: string; error: Error }[],
+    const result: AddInvitesResult = {
+      found: [],
+      created: [],
+      error: [],
       deactivated: 0,
     };
 
@@ -260,5 +267,7 @@ export class Invite {
     );
   }
 }
+
+export type InviteDocument = DocumentType<Invite>;
 
 export const InviteModel = getModelForClass(Invite);

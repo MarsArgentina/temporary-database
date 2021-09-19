@@ -50,7 +50,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.importFromOldData = exports.importFromParsedOldData = exports.parseOldData = void 0;
 var xlsx = require("xlsx");
 var guaranteeBuffer_1 = require("../helpers/guaranteeBuffer");
-var getFulfilledResults_1 = require("../helpers/getFulfilledResults");
+var getResults_1 = require("../helpers/getResults");
 var invite_1 = require("../models/invite");
 var user_1 = require("../models/user");
 var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, function () {
@@ -88,7 +88,7 @@ var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, fu
 }); };
 exports.parseOldData = parseOldData;
 var importFromParsedOldData = function (users, invites, event, overwrites) {
-    if (event === void 0) { event = "nsac2020"; }
+    if (event === void 0) { event = "NSAC-2020"; }
     if (overwrites === void 0) { overwrites = {}; }
     return __awaiter(void 0, void 0, void 0, function () {
         var invitesResult, usersResult;
@@ -110,7 +110,7 @@ var importFromParsedOldData = function (users, invites, event, overwrites) {
                 case 2:
                     usersResult = _a.sent();
                     return [2 /*return*/, {
-                            users: (0, getFulfilledResults_1.getFulfilledResults)(usersResult),
+                            users: (0, getResults_1.getFulfilledResults)(usersResult),
                             invites: invitesResult,
                         }];
             }
@@ -119,7 +119,7 @@ var importFromParsedOldData = function (users, invites, event, overwrites) {
 };
 exports.importFromParsedOldData = importFromParsedOldData;
 var importFromOldData = function (file, event, overwrites) {
-    if (event === void 0) { event = "nsac2020"; }
+    if (event === void 0) { event = "NSAC-2020"; }
     if (overwrites === void 0) { overwrites = {}; }
     return __awaiter(void 0, void 0, void 0, function () {
         var _a, users, invites;

@@ -23,8 +23,6 @@ export const connect = ({ host, port, ...options }: ConnectOptions = {}) => {
   if (!host) throw new Error("A host was not provided");
   const finalPort = port && port.trim() !== "" ? `:${port.trim()}` : "";
 
-  console.log(process.env.MONGODB_USERNAME, process.env.MONGODB_PASSWORD);
-
   return mongoose.connect(`mongodb://${host.trim()}${finalPort}/`, {
     dbName: "tmsa",
     authSource: "tmsa",

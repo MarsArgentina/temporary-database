@@ -51,7 +51,6 @@ var connect = function (_a) {
     if (!host)
         throw new Error("A host was not provided");
     var finalPort = port && port.trim() !== "" ? ":" + port.trim() : "";
-    console.log(process.env.MONGODB_USERNAME, process.env.MONGODB_PASSWORD);
     return mongoose.connect("mongodb://" + host.trim() + finalPort + "/", __assign({ dbName: "tmsa", authSource: "tmsa", user: (_b = process.env.MONGODB_USERNAME) === null || _b === void 0 ? void 0 : _b.trim(), pass: (_c = process.env.MONGODB_PASSWORD) === null || _c === void 0 ? void 0 : _c.trim(), useNewUrlParser: true, useUnifiedTopology: true }, options));
 };
 exports.connect = connect;

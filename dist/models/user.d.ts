@@ -16,6 +16,7 @@ export declare class User {
     discordId: string;
     name: string;
     inDiscord: boolean;
+    isUpdating?: boolean;
     ageRange?: AgeRange;
     roles: string[];
     unresolvedInvites: Map<string, string>;
@@ -33,6 +34,8 @@ export declare class User {
         id: string;
         displayName: string;
     }): Promise<DocumentType<User, import("@typegoose/typegoose/lib/types").BeAnObject>>;
+    static startUpdate(this: ReturnModelType<typeof User>): Promise<import("mongoose").UpdateWriteOpResult>;
+    static finishUpdate(this: ReturnModelType<typeof User>): Promise<import("mongoose").UpdateWriteOpResult>;
     static findFromDiscord(this: ReturnModelType<typeof User>, user: {
         id: string;
         displayName: string;
@@ -45,4 +48,5 @@ export declare class User {
     static fetchUser(this: ReturnModelType<typeof User>, user: Ref<User, Types.ObjectId>): Promise<DocumentType<User> | null>;
     static findByUnresolvedInvite(this: ReturnModelType<typeof User>, event: string, email: string): Promise<DocumentType<User, import("@typegoose/typegoose/lib/types").BeAnObject> | null>;
 }
+export declare type UserDocument = DocumentType<User>;
 export declare const UserModel: ReturnModelType<typeof User, import("@typegoose/typegoose/lib/types").BeAnObject>;

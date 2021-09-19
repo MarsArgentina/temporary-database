@@ -72,7 +72,7 @@ var typegoose_1 = require("@typegoose/typegoose");
 var user_1 = require("./user");
 var group_1 = require("./group");
 var guaranteeError_1 = require("../helpers/guaranteeError");
-var getFulfilledResults_1 = require("../helpers/getFulfilledResults");
+var getResults_1 = require("../helpers/getResults");
 var Invite = /** @class */ (function () {
     function Invite() {
     }
@@ -130,7 +130,7 @@ var Invite = /** @class */ (function () {
                     case 3:
                         revoked = _c.sent();
                         if (this._id !== (revoked === null || revoked === void 0 ? void 0 : revoked._id)) {
-                            console.error("Probably revoked an erroneous invite\n          - The user was: " + user.toString() + "\n          - The revoked that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The invite that had to be revoked was: " + this.toString() + "}\n          ");
+                            console.error("Probably revoked an erroneous invite\n          - The user was: " + user.toString() + "\n          - The invite that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The invite that had to be revoked was: " + this.toString() + "}\n        ");
                         }
                         _c.label = 4;
                     case 4: return [2 /*return*/, returnUser ? user : null];
@@ -296,7 +296,7 @@ var Invite = /** @class */ (function () {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        _a = getFulfilledResults_1.getFulfilledResults;
+                        _a = getResults_1.getFulfilledResults;
                         return [4 /*yield*/, Promise.allSettled(invites.map(this.fetchInvite))];
                     case 1: return [2 /*return*/, _a.apply(void 0, [_b.sent()])];
                 }

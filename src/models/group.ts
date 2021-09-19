@@ -19,6 +19,9 @@ export class Group {
   @prop({ type: String, required: true, default: () => [] })
   channels!: string[];
 
+  @prop({ required: true, default: false })
+  isOpen!: boolean;
+
   @prop()
   meta?: string;
 
@@ -75,5 +78,7 @@ export class Group {
     return await this.findOne({ _id: group });
   }
 }
+
+export type GroupDocument = DocumentType<Group>;
 
 export const GroupModel = getModelForClass(Group);

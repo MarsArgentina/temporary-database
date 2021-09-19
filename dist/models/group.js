@@ -106,6 +106,10 @@ var Group = /** @class */ (function () {
         __metadata("design:type", Array)
     ], Group.prototype, "channels", void 0);
     __decorate([
+        (0, typegoose_1.prop)({ required: true, default: false }),
+        __metadata("design:type", Boolean)
+    ], Group.prototype, "isOpen", void 0);
+    __decorate([
         (0, typegoose_1.prop)(),
         __metadata("design:type", String)
     ], Group.prototype, "meta", void 0);
