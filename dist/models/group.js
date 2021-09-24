@@ -48,6 +48,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GroupModel = exports.Group = void 0;
 var typegoose_1 = require("@typegoose/typegoose");
 var invite_1 = require("./invite");
+var event_1 = require("./event");
+var generate_password_1 = require("generate-password");
 var Group = /** @class */ (function () {
     function Group() {
     }
@@ -67,6 +69,8 @@ var Group = /** @class */ (function () {
         return this.getInviteIndex(invite) !== -1;
     };
     Group.prototype.addInvite = function (invite) {
+        if (event_1.EventModel.getId(invite.event) !== event_1.EventModel.getId(this.event))
+            throw new Error("Tried to add an Invite that belongs to a different Event than this Group.");
         if (this.hasInvite(invite))
             return;
         this.members.push(invite);
@@ -80,22 +84,47 @@ var Group = /** @class */ (function () {
     };
     Group.fetchGroup = function (group) {
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var id, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         if (!group)
                             return [2 /*return*/, null];
-                        if ((0, typegoose_1.isDocument)(group))
+                        if (typeof group !== "string" &&
+                            (0, typegoose_1.isDocument)(group))
                             return [2 /*return*/, group];
-                        return [4 /*yield*/, this.findOne({ _id: group })];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        if (!(group instanceof Group)) return [3 /*break*/, 4];
+                        id = group._id;
+                        if (!id) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.findById(id)];
+                    case 1:
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _a = null;
+                        _b.label = 3;
+                    case 3: return [2 /*return*/, _a];
+                    case 4: return [4 /*yield*/, this.findById(group)];
+                    case 5: return [2 /*return*/, _b.sent()];
                 }
             });
         });
     };
+    Group.getId = function (group) {
+        if (!group)
+            return undefined;
+        if (typeof group !== "string" &&
+            (0, typegoose_1.isDocument)(group))
+            return group._id.toString();
+        if (group instanceof Group) {
+            var id = group._id;
+            return id ? id.toString() : undefined;
+        }
+        return group.toString();
+    };
     __decorate([
-        (0, typegoose_1.prop)({ required: true }),
-        __metadata("design:type", String)
+        (0, typegoose_1.prop)({ ref: function () { return "Event"; }, required: true }),
+        __metadata("design:type", Object)
     ], Group.prototype, "event", void 0);
     __decorate([
         (0, typegoose_1.prop)({ ref: function () { return "Invite"; }, required: true, default: function () { return []; } }),
@@ -105,6 +134,26 @@ var Group = /** @class */ (function () {
         (0, typegoose_1.prop)({ type: String, required: true, default: function () { return []; } }),
         __metadata("design:type", Array)
     ], Group.prototype, "channels", void 0);
+    __decorate([
+        (0, typegoose_1.prop)({
+            required: true,
+            unique: true,
+            default: function () {
+                return (0, generate_password_1.generate)({
+                    length: 10,
+                    uppercase: true,
+                    lowercase: false,
+                    numbers: true,
+                    symbols: false,
+                });
+            },
+        }),
+        __metadata("design:type", String)
+    ], Group.prototype, "accessCode", void 0);
+    __decorate([
+        (0, typegoose_1.prop)({ required: true }),
+        __metadata("design:type", String)
+    ], Group.prototype, "role", void 0);
     __decorate([
         (0, typegoose_1.prop)({ required: true, default: false }),
         __metadata("design:type", Boolean)

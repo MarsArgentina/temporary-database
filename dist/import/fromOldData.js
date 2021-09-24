@@ -51,7 +51,6 @@ exports.importFromOldData = exports.importFromParsedOldData = exports.parseOldDa
 var xlsx = require("xlsx");
 var guaranteeBuffer_1 = require("../helpers/guaranteeBuffer");
 var getResults_1 = require("../helpers/getResults");
-var invite_1 = require("../models/invite");
 var user_1 = require("../models/user");
 var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, function () {
     var buffer, workbook, data, invites, users;
@@ -87,8 +86,7 @@ var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, fu
     });
 }); };
 exports.parseOldData = parseOldData;
-var importFromParsedOldData = function (users, invites, event, overwrites) {
-    if (event === void 0) { event = "NSAC-2020"; }
+var importFromParsedOldData = function (event, users, invites, overwrites) {
     if (overwrites === void 0) { overwrites = {}; }
     return __awaiter(void 0, void 0, void 0, function () {
         var invitesResult, usersResult;
@@ -96,14 +94,14 @@ var importFromParsedOldData = function (users, invites, event, overwrites) {
             switch (_a.label) {
                 case 0:
                     overwrites = __assign({ role: true, inviteMeta: true, userMeta: true, name: true }, overwrites);
-                    return [4 /*yield*/, invite_1.InviteModel.addInviteList(event, invites, "participant", {
-                            addRole: !overwrites.role,
-                            overwriteMeta: !overwrites.inviteMeta,
+                    return [4 /*yield*/, event.addInviteList(invites, {
+                            overwriteRole: overwrites.role,
+                            overwriteMeta: overwrites.inviteMeta,
                             deactivateMissing: false,
                         })];
                 case 1:
                     invitesResult = _a.sent();
-                    return [4 /*yield*/, user_1.UserModel.addUserList(event, users, {
+                    return [4 /*yield*/, user_1.UserModel.addUsersFromPastEvent(event, users, {
                             overwriteMeta: overwrites.userMeta,
                             overwriteName: overwrites.name
                         })];
@@ -118,8 +116,7 @@ var importFromParsedOldData = function (users, invites, event, overwrites) {
     });
 };
 exports.importFromParsedOldData = importFromParsedOldData;
-var importFromOldData = function (file, event, overwrites) {
-    if (event === void 0) { event = "NSAC-2020"; }
+var importFromOldData = function (event, file, overwrites) {
     if (overwrites === void 0) { overwrites = {}; }
     return __awaiter(void 0, void 0, void 0, function () {
         var _a, users, invites;
@@ -128,7 +125,7 @@ var importFromOldData = function (file, event, overwrites) {
                 case 0: return [4 /*yield*/, (0, exports.parseOldData)(file)];
                 case 1:
                     _a = _b.sent(), users = _a[0], invites = _a[1];
-                    return [4 /*yield*/, (0, exports.importFromParsedOldData)(users, invites, event, overwrites)];
+                    return [4 /*yield*/, (0, exports.importFromParsedOldData)(event, users, invites, overwrites)];
                 case 2: return [2 /*return*/, _b.sent()];
             }
         });

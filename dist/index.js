@@ -32,15 +32,15 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.connect = exports.Database = exports.AgeRange = exports.importers = exports.helpers = void 0;
+exports.connect = exports.Database = exports.importers = exports.helpers = void 0;
 var mongoose = require("mongoose");
 exports.helpers = require("./helpers");
 exports.importers = require("./import");
+__exportStar(require("./models/event"), exports);
 __exportStar(require("./models/user"), exports);
 __exportStar(require("./models/invite"), exports);
 __exportStar(require("./models/group"), exports);
-var agerange_1 = require("./types/agerange");
-Object.defineProperty(exports, "AgeRange", { enumerable: true, get: function () { return agerange_1.AgeRange; } });
+__exportStar(require("./types/agerange"), exports);
 exports.Database = mongoose;
 var connect = function (_a) {
     var _b, _c;

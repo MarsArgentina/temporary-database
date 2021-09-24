@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.importFromNSAC = exports.parseNSAC = void 0;
 var xlsx = require("xlsx");
 var guaranteeBuffer_1 = require("../helpers/guaranteeBuffer");
-var invite_1 = require("../models/invite");
 var parseNSAC = function (file) { return __awaiter(void 0, void 0, void 0, function () {
     var buffer, workbook, data;
     return __generator(this, function (_a) {
@@ -60,14 +59,14 @@ var parseNSAC = function (file) { return __awaiter(void 0, void 0, void 0, funct
     });
 }); };
 exports.parseNSAC = parseNSAC;
-var importFromNSAC = function (file, event, role, options) { return __awaiter(void 0, void 0, void 0, function () {
+var importFromNSAC = function (event, file, options) { return __awaiter(void 0, void 0, void 0, function () {
     var invites;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, (0, exports.parseNSAC)(file)];
             case 1:
                 invites = _a.sent();
-                return [4 /*yield*/, invite_1.InviteModel.addInviteList(event, invites, role, options)];
+                return [4 /*yield*/, event.addInviteList(invites, options)];
             case 2: return [2 /*return*/, _a.sent()];
         }
     });

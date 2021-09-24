@@ -55,11 +55,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModel = exports.User = void 0;
 var typegoose_1 = require("@typegoose/typegoose");
 var agerange_1 = require("../types/agerange");
 var invite_1 = require("./invite");
+var event_1 = require("./event");
 var User = /** @class */ (function () {
     function User() {
     }
@@ -71,36 +81,76 @@ var User = /** @class */ (function () {
             });
         });
     };
-    User.prototype.revokeInvite = function (event) {
+    User.prototype.getAllRoles = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var invites, resolved, revoked;
+            var invites, inviteRoles;
+            var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, invite_1.InviteModel.fetchAllInvites(this.resolvedInvites)];
+                    case 0: return [4 /*yield*/, invite_1.InviteModel.fetchAllInvites(Array.from(this.resolvedInvites.values()))];
                     case 1:
                         invites = _a.sent();
-                        resolved = invites.find(function (invite) { return invite.event === event; });
+                        return [4 /*yield*/, Promise.all(invites.map(function (invite) { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            if (!invite)
+                                                return [2 /*return*/, []];
+                                            return [4 /*yield*/, invite.getAllRoles().catch(function () { return []; })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); }))];
+                    case 2:
+                        inviteRoles = _a.sent();
+                        return [2 /*return*/, __spreadArray(__spreadArray([], this.roles, true), inviteRoles.flat(1), true)];
+                }
+            });
+        });
+    };
+    User.prototype.revokeInvite = function (event) {
+        return __awaiter(this, void 0, void 0, function () {
+            var eventId, invite, resolved, revoked;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        eventId = event_1.EventModel.getId(event);
+                        if (!eventId)
+                            throw new Error("Tried to revoke an invite of an unknown event: " + (event === null || event === void 0 ? void 0 : event.toString()));
+                        invite = this.resolvedInvites.get(eventId);
+                        if (!invite)
+                            return [2 /*return*/, null];
+                        return [4 /*yield*/, invite_1.InviteModel.fetchInvite(invite)];
+                    case 1:
+                        resolved = _a.sent();
                         if (!resolved) return [3 /*break*/, 3];
                         return [4 /*yield*/, resolved.revoke({ returnUser: true })];
                     case 2:
                         revoked = _a.sent();
-                        if ((revoked === null || revoked === void 0 ? void 0 : revoked._id) !== this._id) {
+                        if ((revoked === null || revoked === void 0 ? void 0 : revoked._id.toString()) !== this._id.toString()) {
                             console.error("Probably revoked an erroneous invite\n          - The invite was: " + resolved.toString() + "\n          - The user that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The user that had to be revoked was: " + this.toString() + "}\n        ");
                         }
-                        this.resolvedInvites.splice(this.resolvedInvites.findIndex(function (invite) { return resolved.isEqual(invite); }), 1);
+                        this.resolvedInvites.delete(eventId);
                         return [2 /*return*/, resolved];
                     case 3:
-                        this.unresolvedInvites.delete(event);
+                        this.unresolvedInvites.delete(eventId);
                         return [2 /*return*/, null];
                 }
             });
         });
     };
-    User.prototype.forcedResolveInvite = function (invite) {
+    User.prototype.forcedResolveInvite = function (event, invite) {
         return __awaiter(this, void 0, void 0, function () {
+            var eventId, inviteId;
             return __generator(this, function (_a) {
-                this.unresolvedInvites.delete(invite.event);
-                this.resolvedInvites.push(invite);
+                eventId = event_1.EventModel.getId(event);
+                inviteId = invite_1.InviteModel.getId(invite);
+                if (!eventId)
+                    throw new Error("Tried to resolve an invite but couldn't find the id of Event: " + (event === null || event === void 0 ? void 0 : event.toString()));
+                if (!inviteId)
+                    throw new Error("Tried to resolve an invite but couldn't find the id of Invite: " + (invite === null || invite === void 0 ? void 0 : invite.toString()));
+                this.unresolvedInvites.delete(eventId);
+                this.resolvedInvites.set(eventId, inviteId);
                 return [2 /*return*/];
             });
         });
@@ -108,11 +158,14 @@ var User = /** @class */ (function () {
     User.prototype.resolveInvite = function (event, forceRevoke) {
         if (forceRevoke === void 0) { forceRevoke = false; }
         return __awaiter(this, void 0, void 0, function () {
-            var email, invite, resolved;
+            var eventId, email, invite, resolved;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        email = this.unresolvedInvites.get(event);
+                        eventId = event_1.EventModel.getId(event);
+                        if (!eventId)
+                            return [2 /*return*/, null];
+                        email = this.unresolvedInvites.get(eventId);
                         if (!email)
                             return [2 /*return*/, null];
                         return [4 /*yield*/, invite_1.InviteModel.findExact(event, email)];
@@ -123,7 +176,7 @@ var User = /** @class */ (function () {
                         resolved = invite.resolve(this, forceRevoke);
                         if (!resolved)
                             return [2 /*return*/, null];
-                        this.forcedResolveInvite(invite);
+                        this.forcedResolveInvite(event, invite);
                         return [2 /*return*/, invite];
                 }
             });
@@ -131,14 +184,18 @@ var User = /** @class */ (function () {
     };
     User.prototype.setInvite = function (event, email) {
         return __awaiter(this, void 0, void 0, function () {
-            var revoked, resolved;
+            var eventId, revoked, resolved;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.revokeInvite(event)];
+                    case 0:
+                        eventId = event_1.EventModel.getId(event);
+                        if (!eventId)
+                            throw new Error("Couldn't set an invite for unknown Event: " + (event === null || event === void 0 ? void 0 : event.toString()));
+                        return [4 /*yield*/, this.revokeInvite(event)];
                     case 1:
                         revoked = _a.sent();
                         if (!(email && email !== "")) return [3 /*break*/, 3];
-                        this.unresolvedInvites.set(event, email);
+                        this.unresolvedInvites.set(eventId, email);
                         return [4 /*yield*/, this.resolveInvite(event)];
                     case 2:
                         resolved = _a.sent();
@@ -149,19 +206,24 @@ var User = /** @class */ (function () {
         });
     };
     User.prototype.getInvite = function (event, unresolved) {
-        var _a;
+        var _a, _b;
         if (unresolved === void 0) { unresolved = false; }
         return __awaiter(this, void 0, void 0, function () {
-            var found;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var eventId, invite;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
+                        eventId = event_1.EventModel.getId(event);
+                        if (!eventId)
+                            return [2 /*return*/, null];
                         if (!unresolved) return [3 /*break*/, 1];
-                        return [2 /*return*/, (_a = this.unresolvedInvites.get(event)) !== null && _a !== void 0 ? _a : null];
-                    case 1: return [4 /*yield*/, invite_1.InviteModel.fetchAllInvites(this.resolvedInvites)];
-                    case 2:
-                        found = (_b.sent()).find(function (invite) { return invite.event === event; });
-                        return [2 /*return*/, found ? found : null];
+                        return [2 /*return*/, (_a = this.unresolvedInvites.get(eventId)) !== null && _a !== void 0 ? _a : null];
+                    case 1:
+                        invite = this.resolvedInvites.get(eventId);
+                        if (!invite)
+                            return [2 /*return*/, null];
+                        return [4 /*yield*/, invite_1.InviteModel.fetchInvite(invite)];
+                    case 2: return [2 /*return*/, (_b = (_c.sent())) !== null && _b !== void 0 ? _b : null];
                 }
             });
         });
@@ -179,15 +241,15 @@ var User = /** @class */ (function () {
     User.finishUpdate = function () {
         return this.updateMany({ isUpdating: true }, { inDiscord: false }, { multi: true }).exec();
     };
-    User.findFromDiscord = function (user) {
-        return this.findOne({ discordId: user.id });
+    User.findFromDiscord = function (discordId) {
+        return this.findOne({ discordId: discordId });
     };
     User.addFromDiscord = function (user) {
         return __awaiter(this, void 0, void 0, function () {
             var found, _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
-                    case 0: return [4 /*yield*/, this.findFromDiscord(user)];
+                    case 0: return [4 /*yield*/, this.findFromDiscord(user.id)];
                     case 1:
                         found = _b.sent();
                         if (!(found !== null && found !== void 0)) return [3 /*break*/, 2];
@@ -202,14 +264,17 @@ var User = /** @class */ (function () {
             });
         });
     };
-    User.addUserList = function (event, users, options) {
+    User.addUsersFromPastEvent = function (event, users, options) {
         if (options === void 0) { options = {}; }
         return __awaiter(this, void 0, void 0, function () {
-            var opts;
+            var eventId, opts;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        eventId = event_1.EventModel.getId(event);
+                        if (!eventId)
+                            throw new Error("Couldn't add users from unknown Event: " + (event === null || event === void 0 ? void 0 : event.toString()));
                         opts = __assign({ overwriteName: true, overwriteMeta: true }, options);
                         return [4 /*yield*/, Promise.allSettled(users.map(function (info) { return __awaiter(_this, void 0, void 0, function () {
                                 var user;
@@ -236,26 +301,51 @@ var User = /** @class */ (function () {
             });
         });
     };
+    User.findByUnresolvedInvite = function (event, email) {
+        var _a;
+        return this.findOne((_a = {},
+            _a["unresolvedInvites." + event_1.EventModel.getId(event)] = email,
+            _a)).exec();
+    };
     User.fetchUser = function (user) {
         return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var id, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         if (!user)
                             return [2 /*return*/, null];
-                        if ((0, typegoose_1.isDocument)(user))
+                        if (typeof user !== "string" &&
+                            (0, typegoose_1.isDocument)(user))
                             return [2 /*return*/, user];
-                        return [4 /*yield*/, this.findOne({ _id: user })];
-                    case 1: return [2 /*return*/, _a.sent()];
+                        if (!(user instanceof User_1)) return [3 /*break*/, 4];
+                        id = user._id;
+                        if (!id) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.findById(id)];
+                    case 1:
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _a = null;
+                        _b.label = 3;
+                    case 3: return [2 /*return*/, _a];
+                    case 4: return [4 /*yield*/, this.findById(user)];
+                    case 5: return [2 /*return*/, _b.sent()];
                 }
             });
         });
     };
-    User.findByUnresolvedInvite = function (event, email) {
-        var _a;
-        return this.findOne((_a = {},
-            _a["unresolvedInvites." + event] = email,
-            _a)).exec();
+    User.getId = function (user) {
+        if (!user)
+            return undefined;
+        if (typeof user !== "string" &&
+            (0, typegoose_1.isDocument)(user))
+            return user._id.toString();
+        if (user instanceof User_1) {
+            var id = user._id;
+            return id ? id.toString() : undefined;
+        }
+        return user.toString();
     };
     var User_1;
     __decorate([
@@ -266,6 +356,10 @@ var User = /** @class */ (function () {
         (0, typegoose_1.prop)({ required: true }),
         __metadata("design:type", String)
     ], User.prototype, "name", void 0);
+    __decorate([
+        (0, typegoose_1.prop)(),
+        __metadata("design:type", String)
+    ], User.prototype, "displayName", void 0);
     __decorate([
         (0, typegoose_1.prop)({ required: true, default: false }),
         __metadata("design:type", Boolean)
@@ -295,19 +389,31 @@ var User = /** @class */ (function () {
         __metadata("design:type", String)
     ], User.prototype, "meta", void 0);
     __decorate([
-        (0, typegoose_1.prop)({ ref: function () { return "Invite"; }, required: true, default: function () { return []; } }),
-        __metadata("design:type", Array)
+        (0, typegoose_1.prop)({
+            type: String,
+            required: true,
+            default: function () { return new Map(); },
+        }),
+        __metadata("design:type", Map)
     ], User.prototype, "resolvedInvites", void 0);
     User = User_1 = __decorate([
         (0, typegoose_1.pre)("remove", function () {
             var _this = this;
-            Promise.allSettled(this.resolvedInvites.map(function (invite) { return __awaiter(_this, void 0, void 0, function () {
-                var _a;
-                return __generator(this, function (_b) {
-                    switch (_b.label) {
-                        case 0: return [4 /*yield*/, invite_1.InviteModel.fetchInvite(invite)];
+            Promise.allSettled(Array.from(this.resolvedInvites.values()).map(function (id) { return __awaiter(_this, void 0, void 0, function () {
+                var invite;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0: return [4 /*yield*/, invite_1.InviteModel.fetchInvite(id)];
                         case 1:
-                            (_a = (_b.sent())) === null || _a === void 0 ? void 0 : _a.revoke();
+                            invite = _a.sent();
+                            if (!invite)
+                                return [2 /*return*/];
+                            return [4 /*yield*/, invite.revoke()];
+                        case 2:
+                            _a.sent();
+                            return [4 /*yield*/, invite.save()];
+                        case 3:
+                            _a.sent();
                             return [2 /*return*/];
                     }
                 });

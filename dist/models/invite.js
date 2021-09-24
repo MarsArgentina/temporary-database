@@ -1,15 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -55,24 +44,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InviteModel = exports.Invite = void 0;
 var typegoose_1 = require("@typegoose/typegoose");
 var user_1 = require("./user");
 var group_1 = require("./group");
-var guaranteeError_1 = require("../helpers/guaranteeError");
+var event_1 = require("./event");
 var getResults_1 = require("../helpers/getResults");
+var generate_password_1 = require("generate-password");
 var Invite = /** @class */ (function () {
     function Invite() {
     }
@@ -109,7 +88,7 @@ var Invite = /** @class */ (function () {
     Invite.prototype.revoke = function (options) {
         if (options === void 0) { options = { revokeFromUser: false, returnUser: false }; }
         return __awaiter(this, void 0, void 0, function () {
-            var _a, revokeFromUser, _b, returnUser, user, revoked;
+            var _a, revokeFromUser, _b, returnUser, user, event_2, revoked;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
@@ -125,15 +104,20 @@ var Invite = /** @class */ (function () {
                         this.user = undefined;
                         if (!user)
                             return [2 /*return*/, null];
-                        if (!revokeFromUser) return [3 /*break*/, 4];
-                        return [4 /*yield*/, user.revokeInvite(this.event)];
+                        if (!revokeFromUser) return [3 /*break*/, 5];
+                        return [4 /*yield*/, event_1.EventModel.fetchEvent(this.event)];
                     case 3:
+                        event_2 = _c.sent();
+                        if (!event_2)
+                            throw new Error("Couldn't find an Event for this invite.");
+                        return [4 /*yield*/, user.revokeInvite(event_2)];
+                    case 4:
                         revoked = _c.sent();
-                        if (this._id !== (revoked === null || revoked === void 0 ? void 0 : revoked._id)) {
+                        if (exports.InviteModel.getId(this) !== exports.InviteModel.getId(revoked)) {
                             console.error("Probably revoked an erroneous invite\n          - The user was: " + user.toString() + "\n          - The invite that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The invite that had to be revoked was: " + this.toString() + "}\n        ");
                         }
-                        _c.label = 4;
-                    case 4: return [2 /*return*/, returnUser ? user : null];
+                        _c.label = 5;
+                    case 5: return [2 /*return*/, returnUser ? user : null];
                 }
             });
         });
@@ -150,145 +134,64 @@ var Invite = /** @class */ (function () {
             });
         });
     };
-    Invite.prototype.isEqual = function (invite) {
-        if ((0, typegoose_1.isDocument)(invite))
-            return invite === this || invite._id === this._id;
-        return invite && this._id === invite;
+    Invite.prototype.getAllRoles = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var event, roles, group;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, event_1.EventModel.fetchEvent(this.event)];
+                    case 1:
+                        event = _a.sent();
+                        if (!event)
+                            throw new Error("The Event this Invite belongs to couldn't be found.");
+                        roles = this.roles
+                            .map(function (role) {
+                            return event.roles.get(role);
+                        })
+                            .filter(function (role) { return role !== undefined && role !== ""; });
+                        if (!this.group) return [3 /*break*/, 3];
+                        return [4 /*yield*/, group_1.GroupModel.fetchGroup(this.group)];
+                    case 2:
+                        group = _a.sent();
+                        if (!group)
+                            throw new Error("The Group this Invite belongs to couldn't be found.");
+                        roles.push(group.role);
+                        _a.label = 3;
+                    case 3: return [2 /*return*/, roles];
+                }
+            });
+        });
     };
     Invite.prototype.setRole = function (role, add) {
         if (add === void 0) { add = false; }
         return __awaiter(this, void 0, void 0, function () {
+            var event;
             return __generator(this, function (_a) {
-                if (add) {
-                    if (!this.role.includes(role))
-                        this.role.push(role);
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, event_1.EventModel.fetchEvent(this.event)];
+                    case 1:
+                        event = _a.sent();
+                        if (!event)
+                            throw new Error("The Event this Invite belongs to couldn't be found.");
+                        if (!event.roles.has(role))
+                            throw new Error("The role you are trying to give is not defined for this Event");
+                        if (add) {
+                            if (!this.roles.includes(role))
+                                this.roles.push(role);
+                        }
+                        else {
+                            this.roles.splice(0, this.roles.length);
+                            this.roles.push("role");
+                        }
+                        return [2 /*return*/];
                 }
-                else {
-                    this.role.splice(0, this.role.length);
-                    this.role.push("role");
-                }
-                return [2 /*return*/];
             });
         });
-    };
-    Invite.getId = function (invite) {
-        if (!invite)
-            return undefined;
-        if ((0, typegoose_1.isDocument)(invite))
-            return invite._id;
-        if (invite instanceof Invite_1)
-            return invite._id;
-        return invite;
     };
     Invite.findExact = function (event, email) {
+        if (!event)
+            return null;
         return this.findOne({ event: event, email: email });
-    };
-    Invite.addInvite = function (event, email) {
-        return __awaiter(this, void 0, void 0, function () {
-            var found, created, user;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.findExact(event, email)];
-                    case 1:
-                        found = _a.sent();
-                        if (found)
-                            return [2 /*return*/, [found, true]];
-                        return [4 /*yield*/, this.create({ event: event, email: email })];
-                    case 2:
-                        created = _a.sent();
-                        return [4 /*yield*/, user_1.UserModel.findByUnresolvedInvite(event, email)];
-                    case 3:
-                        user = _a.sent();
-                        if (!user) return [3 /*break*/, 5];
-                        user.forcedResolveInvite(created);
-                        return [4 /*yield*/, user.save()];
-                    case 4:
-                        _a.sent();
-                        _a.label = 5;
-                    case 5: return [2 /*return*/, [created, false]];
-                }
-            });
-        });
-    };
-    Invite.addInviteList = function (event, invites, role, options) {
-        if (options === void 0) { options = {}; }
-        return __awaiter(this, void 0, void 0, function () {
-            var opts, result, updated;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0:
-                        opts = __assign({ addRole: false, deactivateMissing: false, overwriteMeta: true }, options);
-                        result = {
-                            found: [],
-                            created: [],
-                            error: [],
-                            deactivated: 0,
-                        };
-                        if (!opts.deactivateMissing) return [3 /*break*/, 2];
-                        return [4 /*yield*/, this.updateMany({ role: role, active: true }, { active: false })];
-                    case 1:
-                        updated = _a.sent();
-                        result.deactivated = updated.nModified;
-                        _a.label = 2;
-                    case 2: return [4 /*yield*/, Promise.allSettled(invites.map(function (_a) { var _b, _c; return __awaiter(_this, void 0, void 0, function () {
-                            var _d, invite, found, error_1;
-                            var email = _a.email, item = __rest(_a, ["email"]);
-                            return __generator(this, function (_e) {
-                                switch (_e.label) {
-                                    case 0:
-                                        _e.trys.push([0, 3, , 4]);
-                                        return [4 /*yield*/, this.addInvite(event, email)];
-                                    case 1:
-                                        _d = _e.sent(), invite = _d[0], found = _d[1];
-                                        if (found) {
-                                            result.found.push(invite);
-                                        }
-                                        else {
-                                            result.created.push(invite);
-                                        }
-                                        invite.active = true;
-                                        invite.meta = opts.overwriteMeta
-                                            ? item.meta
-                                            : (_b = invite.meta) !== null && _b !== void 0 ? _b : item.meta;
-                                        invite.setRole((_c = item.role) !== null && _c !== void 0 ? _c : role, opts.addRole);
-                                        return [4 /*yield*/, invite.save()];
-                                    case 2:
-                                        _e.sent();
-                                        return [3 /*break*/, 4];
-                                    case 3:
-                                        error_1 = _e.sent();
-                                        result.error.push({ email: email, error: (0, guaranteeError_1.guaranteeError)(error_1) });
-                                        return [3 /*break*/, 4];
-                                    case 4: return [2 /*return*/, true];
-                                }
-                            });
-                        }); }))];
-                    case 3:
-                        _a.sent();
-                        if (opts.deactivateMissing) {
-                            result.deactivated -= result.found.length;
-                        }
-                        return [2 /*return*/, result];
-                }
-            });
-        });
-    };
-    Invite.fetchInvite = function (invite) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function () {
-            return __generator(this, function (_b) {
-                switch (_b.label) {
-                    case 0:
-                        if (!invite)
-                            return [2 /*return*/, undefined];
-                        if ((0, typegoose_1.isDocument)(invite))
-                            return [2 /*return*/, invite];
-                        return [4 /*yield*/, this.findOne({ _id: invite })];
-                    case 1: return [2 /*return*/, (_a = (_b.sent())) !== null && _a !== void 0 ? _a : undefined];
-                }
-            });
-        });
     };
     Invite.fetchAllInvites = function (invites) {
         return __awaiter(this, void 0, void 0, function () {
@@ -303,15 +206,51 @@ var Invite = /** @class */ (function () {
             });
         });
     };
+    Invite.fetchInvite = function (invite) {
+        return __awaiter(this, void 0, void 0, function () {
+            var id, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!invite)
+                            return [2 /*return*/, null];
+                        if (typeof invite !== "string" &&
+                            (0, typegoose_1.isDocument)(invite))
+                            return [2 /*return*/, invite];
+                        if (!(invite instanceof Invite_1)) return [3 /*break*/, 4];
+                        id = invite._id;
+                        if (!id) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.findById(id)];
+                    case 1:
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _a = null;
+                        _b.label = 3;
+                    case 3: return [2 /*return*/, _a];
+                    case 4: return [4 /*yield*/, this.findById(invite)];
+                    case 5: return [2 /*return*/, _b.sent()];
+                }
+            });
+        });
+    };
+    Invite.getId = function (invite) {
+        if (!invite)
+            return undefined;
+        if (typeof invite !== "string" &&
+            (0, typegoose_1.isDocument)(invite))
+            return invite._id.toString();
+        if (invite instanceof Invite_1) {
+            var id = invite._id;
+            return id ? id.toString() : undefined;
+        }
+        return invite.toString();
+    };
     var Invite_1;
     __decorate([
         (0, typegoose_1.prop)({ required: true, default: true }),
         __metadata("design:type", Boolean)
     ], Invite.prototype, "active", void 0);
-    __decorate([
-        (0, typegoose_1.prop)({ required: true }),
-        __metadata("design:type", String)
-    ], Invite.prototype, "event", void 0);
     __decorate([
         (0, typegoose_1.prop)({ required: true }),
         __metadata("design:type", String)
@@ -324,11 +263,31 @@ var Invite = /** @class */ (function () {
             minlength: 1,
         }),
         __metadata("design:type", Array)
-    ], Invite.prototype, "role", void 0);
+    ], Invite.prototype, "roles", void 0);
+    __decorate([
+        (0, typegoose_1.prop)({
+            required: true,
+            unique: true,
+            default: function () {
+                return (0, generate_password_1.generate)({
+                    length: 10,
+                    uppercase: true,
+                    lowercase: false,
+                    numbers: true,
+                    symbols: false,
+                });
+            },
+        }),
+        __metadata("design:type", String)
+    ], Invite.prototype, "certificate", void 0);
     __decorate([
         (0, typegoose_1.prop)(),
         __metadata("design:type", String)
     ], Invite.prototype, "meta", void 0);
+    __decorate([
+        (0, typegoose_1.prop)({ ref: function () { return "Event"; }, required: true }),
+        __metadata("design:type", Object)
+    ], Invite.prototype, "event", void 0);
     __decorate([
         (0, typegoose_1.prop)({ ref: function () { return "User"; } }),
         __metadata("design:type", Object)
