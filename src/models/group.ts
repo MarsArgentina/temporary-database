@@ -8,16 +8,35 @@ import {
 } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import { Invite, InviteModel } from "./invite";
+import { Event, EventModel } from "./event";
+import { generate as passwordGenerator } from "generate-password";
 
 export class Group {
-  @prop({ required: true })
-  event!: string;
+  @prop({ ref: () => "Event", required: true })
+  event!: Ref<Event, Types.ObjectId>;
 
   @prop({ ref: () => "Invite", required: true, default: () => [] })
   members!: Ref<Invite, Types.ObjectId>[];
 
   @prop({ type: String, required: true, default: () => [] })
   channels!: string[];
+
+  @prop({
+    required: true,
+    unique: true,
+    default: () =>
+      passwordGenerator({
+        length: 10,
+        uppercase: true,
+        lowercase: false,
+        numbers: true,
+        symbols: false,
+      }),
+  })
+  accessCode!: string;
+
+  @prop({ required: true })
+  role!: string;
 
   @prop({ required: true, default: false })
   isOpen!: boolean;
@@ -47,10 +66,12 @@ export class Group {
     return this.getInviteIndex(invite) !== -1;
   }
 
-  public addInvite(
-    this: DocumentType<Group>,
-    invite: Ref<Invite, Types.ObjectId>
-  ) {
+  public addInvite(this: DocumentType<Group>, invite: DocumentType<Invite>) {
+    if (EventModel.getId(invite.event) !== EventModel.getId(this.event))
+      throw new Error(
+        "Tried to add an Invite that belongs to a different Event than this Group."
+      );
+
     if (this.hasInvite(invite)) return;
     this.members.push(invite);
   }
@@ -69,13 +90,42 @@ export class Group {
 
   public static async fetchGroup(
     this: ReturnModelType<typeof Group>,
-    group: Ref<Group, Types.ObjectId>
-  ) {
+    group: Ref<Group> | string | null
+  ): Promise<DocumentType<Group> | null> {
     if (!group) return null;
 
-    if (isDocument(group)) return group;
+    if (
+      typeof group !== "string" &&
+      isDocument<Group, Types.ObjectId | undefined>(group)
+    )
+      return group;
 
-    return await this.findOne({ _id: group });
+    if (group instanceof Group) {
+      const id = (group as any)._id;
+      return id ? await this.findById(id) : null;
+    }
+
+    return await this.findById(group);
+  }
+
+  public static getId(
+    this: ReturnModelType<typeof Group>,
+    group: Ref<Group> | string | null
+  ): string | undefined {
+    if (!group) return undefined;
+
+    if (
+      typeof group !== "string" &&
+      isDocument<Group, Types.ObjectId | undefined>(group)
+    )
+      return group._id.toString();
+
+    if (group instanceof Group) {
+      const id = (group as any)._id;
+      return id ? id.toString() : undefined;
+    }
+
+    return group.toString();
   }
 }
 

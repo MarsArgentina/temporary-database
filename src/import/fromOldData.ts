@@ -1,8 +1,9 @@
 import * as xlsx from "xlsx";
 import { guaranteeBuffer } from "../helpers/guaranteeBuffer";
 import { getFulfilledResults } from "../helpers/getResults";
-import { InviteItem, InviteModel } from "../models/invite";
+import { InviteItem } from "../models/invite";
 import { UserDocument, UserItem, UserModel } from "../models/user";
+import { EventDocument } from "../models/event";
 
 type ExcelData = {
   name: string;
@@ -58,9 +59,9 @@ export type Overwrites = {
 };
 
 export const importFromParsedOldData = async (
+  event: EventDocument,
   users: UserItem[],
   invites: InviteItem[],
-  event = "NSAC-2020",
   overwrites: Partial<Overwrites> = {}
 ) => {
   overwrites = {
@@ -71,18 +72,16 @@ export const importFromParsedOldData = async (
     ...overwrites,
   };
 
-  const invitesResult = await InviteModel.addInviteList(
-    event,
+  const invitesResult = await event.addInviteList(
     invites,
-    "participant",
     {
-      addRole: !overwrites.role,
-      overwriteMeta: !overwrites.inviteMeta,
+      overwriteRole: overwrites.role,
+      overwriteMeta: overwrites.inviteMeta,
       deactivateMissing: false,
     }
   );
 
-  const usersResult = await UserModel.addUserList(event, users, {
+  const usersResult = await UserModel.addUsersFromPastEvent(event, users, {
     overwriteMeta: overwrites.userMeta,
     overwriteName: overwrites.name
   })
@@ -94,11 +93,11 @@ export const importFromParsedOldData = async (
 };
 
 export const importFromOldData = async (
+  event: EventDocument,
   file: Buffer | ArrayBuffer | string,
-  event = "NSAC-2020",
   overwrites: Partial<Overwrites> = {}
 ) => {
   const [users, invites] = await parseOldData(file);
 
-  return await importFromParsedOldData(users, invites, event, overwrites);
+  return await importFromParsedOldData(event, users, invites, overwrites);
 };

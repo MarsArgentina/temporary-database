@@ -10,8 +10,9 @@ import {
 import { Types } from "mongoose";
 import { User, UserModel } from "./user";
 import { Group, GroupModel } from "./group";
-import { guaranteeError } from "../helpers/guaranteeError";
+import { Event, EventModel } from "./event";
 import { getFulfilledResults } from "../helpers/getResults";
+import { generate as passwordGenerator } from "generate-password";
 
 export type RevokeInviteOptions = {
   revokeFromUser?: boolean;
@@ -19,17 +20,18 @@ export type RevokeInviteOptions = {
 };
 
 export type AddInvitesOptions = {
-  addRole: boolean;
+  role: string;
   deactivateMissing: boolean;
+  overwriteRole: boolean;
   overwriteMeta: boolean;
 };
 
 export type AddInvitesResult = {
   found: InviteDocument[];
   created: InviteDocument[];
-  error: {email: string, error: Error}[];
+  error: { email: string; error: Error }[];
   deactivated: number;
-}
+};
 
 export type InviteItem = { email: string; meta?: string; role?: string };
 
@@ -37,9 +39,6 @@ export type InviteItem = { email: string; meta?: string; role?: string };
 export class Invite {
   @prop({ required: true, default: true })
   public active!: boolean;
-
-  @prop({ required: true })
-  public event!: string;
 
   @prop({ required: true })
   public email!: string;
@@ -50,10 +49,27 @@ export class Invite {
     default: () => ["participant"],
     minlength: 1,
   })
-  public role!: string[];
+  public roles!: string[];
+
+  @prop({
+    required: true,
+    unique: true,
+    default: () =>
+      passwordGenerator({
+        length: 10,
+        uppercase: true,
+        lowercase: false,
+        numbers: true,
+        symbols: false,
+      }),
+  })
+  public certificate!: string;
 
   @prop()
   public meta?: string;
+
+  @prop({ ref: () => "Event", required: true })
+  public event!: Ref<Event, Types.ObjectId>;
 
   @prop({ ref: () => "User" })
   public user?: Ref<User, Types.ObjectId>;
@@ -96,9 +112,12 @@ export class Invite {
     if (!user) return null;
 
     if (revokeFromUser) {
-      const revoked = await user.revokeInvite(this.event);
+      const event = await EventModel.fetchEvent(this.event);
+      if (!event) throw new Error("Couldn't find an Event for this invite.");
 
-      if (this._id !== revoked?._id) {
+      const revoked = await user.revokeInvite(event);
+
+      if (InviteModel.getId(this) !== InviteModel.getId(revoked)) {
         console.error(`Probably revoked an erroneous invite
           - The user was: ${user.toString()}
           - The invite that got revoked was: ${revoked?.toString()}
@@ -121,13 +140,26 @@ export class Invite {
     this.user = user;
   }
 
-  public isEqual(
-    this: DocumentType<Invite>,
-    invite: Ref<Invite, Types.ObjectId>
-  ): boolean {
-    if (isDocument(invite)) return invite === this || invite._id === this._id;
+  public async getAllRoles(this: DocumentType<Invite>) {
+    const event = await EventModel.fetchEvent(this.event);
+    if (!event)
+      throw new Error("The Event this Invite belongs to couldn't be found.");
 
-    return invite && this._id === invite;
+    const roles = this.roles
+      .map((role) => {
+        return event.roles.get(role);
+      })
+      .filter((role) => role !== undefined && role !== "") as string[];
+
+    if (this.group) {
+      const group = await GroupModel.fetchGroup(this.group);
+      if (!group)
+        throw new Error("The Group this Invite belongs to couldn't be found.");
+
+      roles.push(group.role);
+    }
+
+    return roles;
   }
 
   public async setRole(
@@ -135,136 +167,79 @@ export class Invite {
     role: string,
     add: boolean = false
   ) {
+    const event = await EventModel.fetchEvent(this.event);
+    if (!event)
+      throw new Error("The Event this Invite belongs to couldn't be found.");
+
+    if (!event.roles.has(role))
+      throw new Error(
+        "The role you are trying to give is not defined for this Event"
+      );
+
     if (add) {
-      if (!this.role.includes(role)) this.role.push(role);
+      if (!this.roles.includes(role)) this.roles.push(role);
     } else {
-      this.role.splice(0, this.role.length);
-      this.role.push("role");
+      this.roles.splice(0, this.roles.length);
+      this.roles.push("role");
     }
-  }
-
-  public static getId(
-    this: ReturnModelType<typeof Invite>,
-    invite: Ref<Invite>
-  ) {
-    if (!invite) return undefined;
-
-    if (isDocument(invite)) return invite._id as Types.ObjectId;
-
-    if (invite instanceof Invite)
-      return (invite as any)._id as Types.ObjectId | undefined;
-
-    return invite;
   }
 
   public static findExact(
     this: ReturnModelType<typeof Invite>,
-    event: string,
+    event: Ref<Event> | string,
     email: string
   ) {
+    if (!event) return null;
     return this.findOne({ event, email });
-  }
-
-  public static async addInvite(
-    this: ReturnModelType<typeof Invite>,
-    event: string,
-    email: string
-  ): Promise<[DocumentType<Invite>, boolean]> {
-    const found = await this.findExact(event, email);
-
-    if (found) return [found, true];
-
-    const created = await this.create({ event, email });
-
-    const user = await UserModel.findByUnresolvedInvite(event, email);
-    if (user) {
-      user.forcedResolveInvite(created);
-      await user.save();
-    }
-
-    return [created, false];
-  }
-
-  public static async addInviteList(
-    this: ReturnModelType<typeof Invite>,
-    event: string,
-    invites: InviteItem[],
-    role: string,
-    options: Partial<AddInvitesOptions> = {}
-  ) {
-    const opts: AddInvitesOptions = {
-      addRole: false,
-      deactivateMissing: false,
-      overwriteMeta: true,
-      ...options,
-    };
-
-    const result: AddInvitesResult = {
-      found: [],
-      created: [],
-      error: [],
-      deactivated: 0,
-    };
-
-    if (opts.deactivateMissing) {
-      const updated = await this.updateMany(
-        { role, active: true },
-        { active: false }
-      );
-      result.deactivated = updated.nModified;
-    }
-
-    await Promise.allSettled(
-      invites.map(async ({ email, ...item }) => {
-        try {
-          const [invite, found] = await this.addInvite(event, email);
-
-          if (found) {
-            result.found.push(invite);
-          } else {
-            result.created.push(invite);
-          }
-
-          invite.active = true;
-          invite.meta = opts.overwriteMeta
-            ? item.meta
-            : invite.meta ?? item.meta;
-          invite.setRole(item.role ?? role, opts.addRole);
-
-          await invite.save();
-        } catch (error) {
-          result.error.push({ email, error: guaranteeError(error) });
-        }
-
-        return true;
-      })
-    );
-
-    if (opts.deactivateMissing) {
-      result.deactivated -= result.found.length;
-    }
-
-    return result;
-  }
-
-  public static async fetchInvite(
-    this: ReturnModelType<typeof Invite>,
-    invite: Ref<Invite, Types.ObjectId>
-  ) {
-    if (!invite) return undefined;
-
-    if (isDocument(invite)) return invite;
-
-    return (await this.findOne({ _id: invite })) ?? undefined;
   }
 
   public static async fetchAllInvites(
     this: ReturnModelType<typeof Invite>,
-    invites: Ref<Invite, Types.ObjectId>[]
+    invites: (Ref<Invite, Types.ObjectId> | string)[]
   ) {
     return getFulfilledResults(
       await Promise.allSettled(invites.map(this.fetchInvite))
     );
+  }
+
+  public static async fetchInvite(
+    this: ReturnModelType<typeof Invite>,
+    invite: Ref<Invite> | string | null
+  ): Promise<DocumentType<Invite> | null> {
+    if (!invite) return null;
+
+    if (
+      typeof invite !== "string" &&
+      isDocument<Invite, Types.ObjectId | undefined>(invite)
+    )
+      return invite;
+
+    if (invite instanceof Invite) {
+      const id = (invite as any)._id;
+      return id ? await this.findById(id) : null;
+    }
+
+    return await this.findById(invite);
+  }
+
+  public static getId(
+    this: ReturnModelType<typeof Invite>,
+    invite: Ref<Invite> | string | null
+  ): string | undefined {
+    if (!invite) return undefined;
+
+    if (
+      typeof invite !== "string" &&
+      isDocument<Invite, Types.ObjectId | undefined>(invite)
+    )
+      return invite._id.toString();
+
+    if (invite instanceof Invite) {
+      const id = (invite as any)._id;
+      return id ? id.toString() : undefined;
+    }
+
+    return invite.toString();
   }
 }
 

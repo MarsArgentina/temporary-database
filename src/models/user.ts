@@ -9,7 +9,8 @@ import {
 } from "@typegoose/typegoose";
 import { Types } from "mongoose";
 import { AgeRange } from "../types/agerange";
-import { Invite, InviteModel } from "./invite";
+import { Invite, InviteDocument, InviteModel } from "./invite";
+import { Event, EventModel } from "./event";
 
 export type AddUsersOptions = {
   overwriteName: boolean;
@@ -25,8 +26,11 @@ export type UserItem = {
 
 @pre<User>("remove", function () {
   Promise.allSettled(
-    this.resolvedInvites.map(async (invite) => {
-      (await InviteModel.fetchInvite(invite))?.revoke();
+    Array.from(this.resolvedInvites.values()).map(async (id) => {
+      const invite = await InviteModel.fetchInvite(id);
+      if (!invite) return;
+      await invite.revoke();
+      await invite.save();
     })
   );
 })
@@ -36,6 +40,9 @@ export class User {
 
   @prop({ required: true })
   public name!: string;
+
+  @prop()
+  public displayName?: string;
 
   @prop({ required: true, default: false })
   public inDiscord!: boolean;
@@ -59,21 +66,52 @@ export class User {
   @prop()
   public meta?: string;
 
-  @prop({ ref: () => "Invite", required: true, default: () => [] })
-  public resolvedInvites!: Ref<Invite, Types.ObjectId>[];
+  @prop({
+    type: String,
+    required: true,
+    default: () => new Map<string, string>(),
+  })
+  public resolvedInvites!: Map<string, string>;
 
   public async isValidated(this: DocumentType<User>) {
     return this.ageRange && this.ageRange !== AgeRange.unspecified;
   }
 
-  public async revokeInvite(this: DocumentType<User>, event: string) {
-    const invites = await InviteModel.fetchAllInvites(this.resolvedInvites);
-    const resolved = invites.find((invite) => invite.event === event);
+  public async getAllRoles(this: DocumentType<User>) {
+    const invites = await InviteModel.fetchAllInvites(
+      Array.from(this.resolvedInvites.values())
+    );
+
+    const inviteRoles = await Promise.all(
+      invites.map(async (invite) => {
+        if (!invite) return [];
+
+        return await invite.getAllRoles().catch(() => [] as string[]);
+      })
+    );
+
+    return [...this.roles, ...inviteRoles.flat(1)];
+  }
+
+  public async revokeInvite(
+    this: DocumentType<User>,
+    event: Ref<Event> | string
+  ) {
+    const eventId = EventModel.getId(event);
+    if (!eventId)
+      throw new Error(
+        `Tried to revoke an invite of an unknown event: ${event?.toString()}`
+      );
+
+    const invite = this.resolvedInvites.get(eventId);
+    if (!invite) return null;
+
+    const resolved = await InviteModel.fetchInvite(invite);
 
     if (resolved) {
       const revoked = await resolved.revoke({ returnUser: true });
 
-      if (revoked?._id !== this._id) {
+      if (revoked?._id.toString() !== this._id.toString()) {
         console.error(`Probably revoked an erroneous invite
           - The invite was: ${resolved.toString()}
           - The user that got revoked was: ${revoked?.toString()}
@@ -81,32 +119,45 @@ export class User {
         `);
       }
 
-      this.resolvedInvites.splice(
-        this.resolvedInvites.findIndex((invite) => resolved.isEqual(invite)),
-        1
-      );
+      this.resolvedInvites.delete(eventId);
 
       return resolved;
     } else {
-      this.unresolvedInvites.delete(event);
+      this.unresolvedInvites.delete(eventId);
       return null;
     }
   }
 
   public async forcedResolveInvite(
     this: DocumentType<User>,
-    invite: DocumentType<Invite>
+    event: Ref<Event> | string,
+    invite: Ref<Invite> | string
   ) {
-    this.unresolvedInvites.delete(invite.event);
-    this.resolvedInvites.push(invite);
+    const eventId = EventModel.getId(event);
+    const inviteId = InviteModel.getId(invite);
+
+    if (!eventId)
+      throw new Error(
+        `Tried to resolve an invite but couldn't find the id of Event: ${event?.toString()}`
+      );
+    if (!inviteId)
+      throw new Error(
+        `Tried to resolve an invite but couldn't find the id of Invite: ${invite?.toString()}`
+      );
+
+    this.unresolvedInvites.delete(eventId);
+    this.resolvedInvites.set(eventId, inviteId);
   }
 
   public async resolveInvite(
     this: DocumentType<User>,
-    event: string,
+    event: Ref<Event> | string,
     forceRevoke = false
   ) {
-    const email = this.unresolvedInvites.get(event);
+    const eventId = EventModel.getId(event);
+    if (!eventId) return null;
+
+    const email = this.unresolvedInvites.get(eventId);
     if (!email) return null;
 
     const invite = await InviteModel.findExact(event, email);
@@ -115,20 +166,26 @@ export class User {
     const resolved = invite.resolve(this, forceRevoke);
     if (!resolved) return null;
 
-    this.forcedResolveInvite(invite);
+    this.forcedResolveInvite(event, invite);
 
     return invite;
   }
 
   public async setInvite(
     this: DocumentType<User>,
-    event: string,
+    event: Ref<Event> | string,
     email?: string
   ) {
+    const eventId = EventModel.getId(event);
+    if (!eventId)
+      throw new Error(
+        `Couldn't set an invite for unknown Event: ${event?.toString()}`
+      );
+
     const revoked = await this.revokeInvite(event);
 
     if (email && email !== "") {
-      this.unresolvedInvites.set(event, email);
+      this.unresolvedInvites.set(eventId, email);
 
       const resolved = await this.resolveInvite(event);
 
@@ -138,32 +195,34 @@ export class User {
 
   public async getInvite(
     this: DocumentType<User>,
-    event: string,
+    event: string | Ref<Event>,
     unresolved?: boolean
-  ): Promise<null | Invite | string>;
+  ): Promise<null | InviteDocument | string>;
   public async getInvite(
     this: DocumentType<User>,
-    event: string,
+    event: string | Ref<Event>,
     unresolved?: false
-  ): Promise<null | Invite>;
+  ): Promise<null | InviteDocument>;
   public async getInvite(
     this: DocumentType<User>,
-    event: string,
+    event: string | Ref<Event>,
     unresolved: true
   ): Promise<null | string>;
   public async getInvite(
     this: DocumentType<User>,
-    event: string,
+    event: string | Ref<Event>,
     unresolved = false
-  ): Promise<null | Invite | string> {
-    if (unresolved) {
-      return this.unresolvedInvites.get(event) ?? null;
-    } else {
-      const found = (
-        await InviteModel.fetchAllInvites(this.resolvedInvites)
-      ).find((invite) => invite.event === event);
+  ): Promise<null | InviteDocument | string> {
+    const eventId = EventModel.getId(event);
+    if (!eventId) return null;
 
-      return found ? found : null;
+    if (unresolved) {
+      return this.unresolvedInvites.get(eventId) ?? null;
+    } else {
+      const invite = this.resolvedInvites.get(eventId);
+      if (!invite) return null;
+
+      return (await InviteModel.fetchInvite(invite)) ?? null;
     }
   }
 
@@ -192,25 +251,31 @@ export class User {
 
   static findFromDiscord(
     this: ReturnModelType<typeof User>,
-    user: { id: string; displayName: string }
+    discordId: string
   ) {
-    return this.findOne({ discordId: user.id });
+    return this.findOne({ discordId });
   }
 
   static async addFromDiscord(
     this: ReturnModelType<typeof User>,
     user: { id: string; displayName: string }
   ) {
-    const found = await this.findFromDiscord(user);
+    const found = await this.findFromDiscord(user.id);
 
     return [found ?? (await this.createFromDiscord(user)), !!found] as const;
   }
 
-  static async addUserList(
-    event: string,
+  static async addUsersFromPastEvent(
+    event: Ref<Event> | string,
     users: UserItem[],
     options: Partial<AddUsersOptions> = {}
   ) {
+    const eventId = EventModel.getId(event);
+    if (!eventId)
+      throw new Error(
+        `Couldn't add users from unknown Event: ${event?.toString()}`
+      );
+
     const opts = {
       overwriteName: true,
       overwriteMeta: true,
@@ -232,25 +297,54 @@ export class User {
     );
   }
 
-  public static async fetchUser(
-    this: ReturnModelType<typeof User>,
-    user: Ref<User, Types.ObjectId>
-  ): Promise<DocumentType<User> | null> {
-    if (!user) return null;
-
-    if (isDocument(user)) return user;
-
-    return await this.findOne({ _id: user });
-  }
-
   public static findByUnresolvedInvite(
     this: ReturnModelType<typeof User>,
-    event: string,
+    event: Ref<Event> | string,
     email: string
   ) {
     return this.findOne({
-      [`unresolvedInvites.${event}`]: email,
+      [`unresolvedInvites.${EventModel.getId(event)}`]: email,
     }).exec();
+  }
+
+  public static async fetchUser(
+    this: ReturnModelType<typeof User>,
+    user: Ref<User> | string | null
+  ): Promise<DocumentType<User> | null> {
+    if (!user) return null;
+
+    if (
+      typeof user !== "string" &&
+      isDocument<User, Types.ObjectId | undefined>(user)
+    )
+      return user;
+
+    if (user instanceof User) {
+      const id = (user as any)._id;
+      return id ? await this.findById(id) : null;
+    }
+
+    return await this.findById(user);
+  }
+
+  public static getId(
+    this: ReturnModelType<typeof User>,
+    user: Ref<User> | string | null
+  ): string | undefined {
+    if (!user) return undefined;
+
+    if (
+      typeof user !== "string" &&
+      isDocument<User, Types.ObjectId | undefined>(user)
+    )
+      return user._id.toString();
+
+    if (user instanceof User) {
+      const id = (user as any)._id;
+      return id ? id.toString() : undefined;
+    }
+
+    return user.toString();
   }
 }
 

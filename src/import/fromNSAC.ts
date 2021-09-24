@@ -1,6 +1,7 @@
 import * as xlsx from "xlsx";
 import { guaranteeBuffer } from "../helpers/guaranteeBuffer";
-import { AddInvitesOptions, InviteItem, InviteModel } from "../models/invite";
+import { EventDocument } from "../models/event";
+import { AddInvitesOptions, InviteItem } from "../models/invite";
 
 type ExcelData = {
   Event: string;
@@ -36,12 +37,11 @@ export const parseNSAC = async (
 };
 
 export const importFromNSAC = async (
+  event: EventDocument,
   file: Buffer | ArrayBuffer | string,
-  event: string,
-  role: string,
   options: Partial<AddInvitesOptions>
 ) => {
   const invites = await parseNSAC(file);
 
-  return await InviteModel.addInviteList(event, invites, role, options);
+  return await event.addInviteList(invites, options);
 };
