@@ -196,11 +196,12 @@ var Invite = /** @class */ (function () {
     Invite.fetchAllInvites = function (invites) {
         return __awaiter(this, void 0, void 0, function () {
             var _a;
+            var _this = this;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
                         _a = getResults_1.getFulfilledResults;
-                        return [4 /*yield*/, Promise.allSettled(invites.map(this.fetchInvite))];
+                        return [4 /*yield*/, Promise.allSettled(invites.map(function (invite) { return _this.fetchInvite(invite); }))];
                     case 1: return [2 /*return*/, _a.apply(void 0, [_b.sent()])];
                 }
             });

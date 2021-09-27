@@ -198,7 +198,7 @@ export class Invite {
     invites: (Ref<Invite, Types.ObjectId> | string)[]
   ) {
     return getFulfilledResults(
-      await Promise.allSettled(invites.map(this.fetchInvite))
+      await Promise.allSettled(invites.map((invite) => this.fetchInvite(invite)))
     );
   }
 
