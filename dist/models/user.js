@@ -90,19 +90,26 @@ var User = /** @class */ (function () {
                     case 0: return [4 /*yield*/, invite_1.InviteModel.fetchAllInvites(Array.from(this.resolvedInvites.values()))];
                     case 1:
                         invites = _a.sent();
+                        console.log("Invites", invites.length);
                         return [4 /*yield*/, Promise.all(invites.map(function (invite) { return __awaiter(_this, void 0, void 0, function () {
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
                                             if (!invite)
+                                                console.log("Invite not found", invite);
+                                            if (!invite)
                                                 return [2 /*return*/, []];
-                                            return [4 /*yield*/, invite.getAllRoles().catch(function () { return []; })];
+                                            return [4 /*yield*/, invite.getAllRoles().catch(function (e) {
+                                                    console.log(e);
+                                                    return [];
+                                                })];
                                         case 1: return [2 /*return*/, _a.sent()];
                                     }
                                 });
                             }); }))];
                     case 2:
                         inviteRoles = _a.sent();
+                        console.log("Invite roles", inviteRoles);
                         return [2 /*return*/, __spreadArray(__spreadArray([], this.roles, true), inviteRoles.flat(1), true)];
                 }
             });

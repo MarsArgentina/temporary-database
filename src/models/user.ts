@@ -82,13 +82,21 @@ export class User {
       Array.from(this.resolvedInvites.values())
     );
 
+    console.log("Invites", invites.length);
+
     const inviteRoles = await Promise.all(
       invites.map(async (invite) => {
+        if (!invite) console.log("Invite not found", invite);
         if (!invite) return [];
 
-        return await invite.getAllRoles().catch(() => [] as string[]);
+        return await invite.getAllRoles().catch((e) => {
+          console.log(e)
+          return [] as string[]
+        });
       })
     );
+
+    console.log("Invite roles", inviteRoles)
 
     return [...this.roles, ...inviteRoles.flat(1)];
   }
