@@ -159,7 +159,7 @@ var Group = /** @class */ (function () {
         __metadata("design:type", Boolean)
     ], Group.prototype, "isOpen", void 0);
     __decorate([
-        (0, typegoose_1.prop)(),
+        (0, typegoose_1.prop)({ default: "{}" }),
         __metadata("design:type", String)
     ], Group.prototype, "meta", void 0);
     return Group;

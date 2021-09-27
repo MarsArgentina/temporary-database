@@ -44,9 +44,9 @@ export const parseOldData = async (
       displayName: item.name,
       invite: item.mail,
       meta: item.birthday
-        ? JSON.stringify({ possibleBirthday: item.birthday?.toISOString() })
+        ? { possibleBirthday: item.birthday?.toISOString() }
         : undefined,
-    }));
+    } as UserItem));
 
   return [users, invites];
 };

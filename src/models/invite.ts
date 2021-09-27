@@ -33,7 +33,7 @@ export type AddInvitesResult = {
   deactivated: number;
 };
 
-export type InviteItem = { email: string; meta?: string; role?: string };
+export type InviteItem = { email: string; meta?: {}; role?: string };
 
 @index({ event: 1, email: 1 }, { unique: true })
 export class Invite {
@@ -65,8 +65,8 @@ export class Invite {
   })
   public certificate!: string;
 
-  @prop()
-  public meta?: string;
+  @prop({default: "{}"})
+  public meta!: string;
 
   @prop({ ref: () => "Event", required: true })
   public event!: Ref<Event, Types.ObjectId>;

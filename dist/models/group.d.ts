@@ -9,7 +9,7 @@ export declare class Group {
     accessCode: string;
     role: string;
     isOpen: boolean;
-    meta?: string;
+    meta: string;
     getInviteIndex(this: DocumentType<Group>, invite: Ref<Invite, Types.ObjectId>): number;
     hasInvite(this: DocumentType<Group>, invite: Ref<Invite, Types.ObjectId>): boolean;
     addInvite(this: DocumentType<Group>, invite: DocumentType<Invite>): void;

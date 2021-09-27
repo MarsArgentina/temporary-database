@@ -31,7 +31,7 @@ export class Event {
   @prop({ required: true, default: false })
   isHidden!: boolean;
 
-  @prop({ required: true, default: -1 })
+  @prop({ required: true, default: 0 })
   maxGroupSize!: number;
 
   @prop({
@@ -41,8 +41,8 @@ export class Event {
   })
   public roles!: Map<string, string>;
 
-  @prop()
-  meta?: string;
+  @prop({ default: "{}" })
+  meta!: string;
 
   public async addGroup(
     this: DocumentType<Event>,
@@ -152,10 +152,14 @@ export class Event {
             result.created.push(invite);
           }
 
+          const oldMeta = JSON.parse(invite.meta);
+          invite.meta = JSON.stringify(
+            opts.overwriteMeta
+              ? { ...oldMeta, ...item.meta }
+              : { ...item.meta, ...oldMeta }
+          );
+
           invite.active = true;
-          invite.meta = opts.overwriteMeta
-            ? item.meta
-            : invite.meta ?? item.meta;
           invite.setRole(item.role ?? role, opts.overwriteRole);
 
           await invite.save();

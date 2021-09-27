@@ -110,29 +110,34 @@ var User = /** @class */ (function () {
     };
     User.prototype.revokeInvite = function (event) {
         return __awaiter(this, void 0, void 0, function () {
-            var eventId, invite, resolved, revoked;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var eventId, invite, resolved, _a, revoked;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0:
                         eventId = event_1.EventModel.getId(event);
                         if (!eventId)
                             throw new Error("Tried to revoke an invite of an unknown event: " + (event === null || event === void 0 ? void 0 : event.toString()));
                         invite = this.resolvedInvites.get(eventId);
-                        if (!invite)
-                            return [2 /*return*/, null];
+                        if (!invite) return [3 /*break*/, 2];
                         return [4 /*yield*/, invite_1.InviteModel.fetchInvite(invite)];
                     case 1:
-                        resolved = _a.sent();
-                        if (!resolved) return [3 /*break*/, 3];
-                        return [4 /*yield*/, resolved.revoke({ returnUser: true })];
+                        _a = _b.sent();
+                        return [3 /*break*/, 3];
                     case 2:
-                        revoked = _a.sent();
+                        _a = null;
+                        _b.label = 3;
+                    case 3:
+                        resolved = _a;
+                        if (!resolved) return [3 /*break*/, 5];
+                        return [4 /*yield*/, resolved.revoke({ returnUser: true })];
+                    case 4:
+                        revoked = _b.sent();
                         if ((revoked === null || revoked === void 0 ? void 0 : revoked._id.toString()) !== this._id.toString()) {
                             console.error("Probably revoked an erroneous invite\n          - The invite was: " + resolved.toString() + "\n          - The user that got revoked was: " + (revoked === null || revoked === void 0 ? void 0 : revoked.toString()) + "\n          - The user that had to be revoked was: " + this.toString() + "}\n        ");
                         }
                         this.resolvedInvites.delete(eventId);
                         return [2 /*return*/, resolved];
-                    case 3:
+                    case 5:
                         this.unresolvedInvites.delete(eventId);
                         return [2 /*return*/, null];
                 }
@@ -277,22 +282,21 @@ var User = /** @class */ (function () {
                             throw new Error("Couldn't add users from unknown Event: " + (event === null || event === void 0 ? void 0 : event.toString()));
                         opts = __assign({ overwriteName: true, overwriteMeta: true }, options);
                         return [4 /*yield*/, Promise.allSettled(users.map(function (info) { return __awaiter(_this, void 0, void 0, function () {
-                                var user;
-                                var _a, _b;
-                                return __generator(this, function (_c) {
-                                    switch (_c.label) {
+                                var user, oldMeta;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
                                         case 0: return [4 /*yield*/, exports.UserModel.addFromDiscord(info)];
                                         case 1:
-                                            user = (_c.sent())[0];
+                                            user = (_a.sent())[0];
                                             user.name = opts.overwriteName ? info.displayName : user.name;
-                                            user.meta = opts.overwriteMeta
-                                                ? (_a = user.meta) !== null && _a !== void 0 ? _a : info.meta
-                                                : (_b = info.meta) !== null && _b !== void 0 ? _b : user.meta;
+                                            oldMeta = JSON.parse(user.meta);
+                                            user.meta = JSON.stringify(opts.overwriteMeta
+                                                ? __assign(__assign({}, oldMeta), info.meta) : __assign(__assign({}, info.meta), oldMeta));
                                             return [4 /*yield*/, user.setInvite(event, info.invite)];
                                         case 2:
-                                            _c.sent();
+                                            _a.sent();
                                             return [4 /*yield*/, user.save()];
-                                        case 3: return [2 /*return*/, _c.sent()];
+                                        case 3: return [2 /*return*/, _a.sent()];
                                     }
                                 });
                             }); }))];
@@ -385,7 +389,7 @@ var User = /** @class */ (function () {
         __metadata("design:type", Map)
     ], User.prototype, "unresolvedInvites", void 0);
     __decorate([
-        (0, typegoose_1.prop)(),
+        (0, typegoose_1.prop)({ default: "{}" }),
         __metadata("design:type", String)
     ], User.prototype, "meta", void 0);
     __decorate([

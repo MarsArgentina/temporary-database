@@ -4,6 +4,6 @@ export declare type GroupInfo = {
     channels: string[];
     role: string;
     invites: string[];
-    meta?: string;
+    meta?: {};
 };
 export declare const importOldGroups: (event: EventDocument, info: GroupInfo[]) => Promise<void>;

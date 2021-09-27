@@ -21,7 +21,7 @@ export type UserItem = {
   id: string;
   displayName: string;
   invite: string;
-  meta?: string;
+  meta?: {};
 };
 
 @pre<User>("remove", function () {
@@ -63,8 +63,8 @@ export class User {
   })
   public unresolvedInvites!: Map<string, string>;
 
-  @prop()
-  public meta?: string;
+  @prop({ default: "{}" })
+  public meta!: string;
 
   @prop({
     type: String,
@@ -104,9 +104,7 @@ export class User {
       );
 
     const invite = this.resolvedInvites.get(eventId);
-    if (!invite) return null;
-
-    const resolved = await InviteModel.fetchInvite(invite);
+    const resolved = invite ? await InviteModel.fetchInvite(invite) : null;
 
     if (resolved) {
       const revoked = await resolved.revoke({ returnUser: true });
@@ -287,9 +285,13 @@ export class User {
         const [user] = await UserModel.addFromDiscord(info);
 
         user.name = opts.overwriteName ? info.displayName : user.name;
-        user.meta = opts.overwriteMeta
-          ? user.meta ?? info.meta
-          : info.meta ?? user.meta;
+
+        const oldMeta = JSON.parse(user.meta);
+        user.meta = JSON.stringify(
+          opts.overwriteMeta
+            ? { ...oldMeta, ...info.meta }
+            : { ...info.meta, ...oldMeta }
+        );
 
         await user.setInvite(event, info.invite);
         return await user.save();

@@ -78,7 +78,7 @@ var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, fu
                 displayName: item.name,
                 invite: item.mail,
                 meta: item.birthday
-                    ? JSON.stringify({ possibleBirthday: (_a = item.birthday) === null || _a === void 0 ? void 0 : _a.toISOString() })
+                    ? { possibleBirthday: (_a = item.birthday) === null || _a === void 0 ? void 0 : _a.toISOString() }
                     : undefined,
             });
         });

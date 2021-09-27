@@ -24,7 +24,7 @@ export declare type AddInvitesResult = {
 };
 export declare type InviteItem = {
     email: string;
-    meta?: string;
+    meta?: {};
     role?: string;
 };
 export declare class Invite {
@@ -32,7 +32,7 @@ export declare class Invite {
     email: string;
     roles: string[];
     certificate: string;
-    meta?: string;
+    meta: string;
     event: Ref<Event, Types.ObjectId>;
     user?: Ref<User, Types.ObjectId>;
     group?: Ref<Group, Types.ObjectId>;

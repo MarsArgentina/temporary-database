@@ -41,8 +41,8 @@ export class Group {
   @prop({ required: true, default: false })
   isOpen!: boolean;
 
-  @prop()
-  meta?: string;
+  @prop({default: "{}"})
+  meta!: string;
 
   public getInviteIndex(
     this: DocumentType<Group>,

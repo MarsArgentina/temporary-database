@@ -11,7 +11,7 @@ export declare type UserItem = {
     id: string;
     displayName: string;
     invite: string;
-    meta?: string;
+    meta?: {};
 };
 export declare class User {
     discordId: string;
@@ -22,7 +22,7 @@ export declare class User {
     ageRange?: AgeRange;
     roles: string[];
     unresolvedInvites: Map<string, string>;
-    meta?: string;
+    meta: string;
     resolvedInvites: Map<string, string>;
     isValidated(this: DocumentType<User>): Promise<boolean | undefined>;
     getAllRoles(this: DocumentType<User>): Promise<string[]>;

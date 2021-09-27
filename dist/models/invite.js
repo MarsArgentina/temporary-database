@@ -281,7 +281,7 @@ var Invite = /** @class */ (function () {
         __metadata("design:type", String)
     ], Invite.prototype, "certificate", void 0);
     __decorate([
-        (0, typegoose_1.prop)(),
+        (0, typegoose_1.prop)({ default: "{}" }),
         __metadata("design:type", String)
     ], Invite.prototype, "meta", void 0);
     __decorate([

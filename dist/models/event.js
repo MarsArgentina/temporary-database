@@ -164,33 +164,33 @@ var Event = /** @class */ (function () {
                         updated = _b.sent();
                         result.deactivated = updated.nModified;
                         _b.label = 2;
-                    case 2: return [4 /*yield*/, Promise.allSettled(invites.map(function (_a) { var _b, _c; return __awaiter(_this, void 0, void 0, function () {
-                            var _d, invite, found, error_1;
+                    case 2: return [4 /*yield*/, Promise.allSettled(invites.map(function (_a) { var _b; return __awaiter(_this, void 0, void 0, function () {
+                            var _c, invite, found, oldMeta, error_1;
                             var email = _a.email, item = __rest(_a, ["email"]);
-                            return __generator(this, function (_e) {
-                                switch (_e.label) {
+                            return __generator(this, function (_d) {
+                                switch (_d.label) {
                                     case 0:
-                                        _e.trys.push([0, 3, , 4]);
+                                        _d.trys.push([0, 3, , 4]);
                                         return [4 /*yield*/, this.addInvite(email)];
                                     case 1:
-                                        _d = _e.sent(), invite = _d[0], found = _d[1];
+                                        _c = _d.sent(), invite = _c[0], found = _c[1];
                                         if (found) {
                                             result.found.push(invite);
                                         }
                                         else {
                                             result.created.push(invite);
                                         }
+                                        oldMeta = JSON.parse(invite.meta);
+                                        invite.meta = JSON.stringify(opts.overwriteMeta
+                                            ? __assign(__assign({}, oldMeta), item.meta) : __assign(__assign({}, item.meta), oldMeta));
                                         invite.active = true;
-                                        invite.meta = opts.overwriteMeta
-                                            ? item.meta
-                                            : (_b = invite.meta) !== null && _b !== void 0 ? _b : item.meta;
-                                        invite.setRole((_c = item.role) !== null && _c !== void 0 ? _c : role, opts.overwriteRole);
+                                        invite.setRole((_b = item.role) !== null && _b !== void 0 ? _b : role, opts.overwriteRole);
                                         return [4 /*yield*/, invite.save()];
                                     case 2:
-                                        _e.sent();
+                                        _d.sent();
                                         return [3 /*break*/, 4];
                                     case 3:
-                                        error_1 = _e.sent();
+                                        error_1 = _d.sent();
                                         result.error.push({ email: email, error: (0, helpers_1.guaranteeError)(error_1) });
                                         return [3 /*break*/, 4];
                                     case 4: return [2 /*return*/, true];
@@ -264,7 +264,7 @@ var Event = /** @class */ (function () {
         __metadata("design:type", Boolean)
     ], Event.prototype, "isHidden", void 0);
     __decorate([
-        (0, typegoose_1.prop)({ required: true, default: -1 }),
+        (0, typegoose_1.prop)({ required: true, default: 0 }),
         __metadata("design:type", Number)
     ], Event.prototype, "maxGroupSize", void 0);
     __decorate([
@@ -276,7 +276,7 @@ var Event = /** @class */ (function () {
         __metadata("design:type", Map)
     ], Event.prototype, "roles", void 0);
     __decorate([
-        (0, typegoose_1.prop)(),
+        (0, typegoose_1.prop)({ default: "{}" }),
         __metadata("design:type", String)
     ], Event.prototype, "meta", void 0);
     return Event;

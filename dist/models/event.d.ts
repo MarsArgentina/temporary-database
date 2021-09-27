@@ -9,7 +9,7 @@ export declare class Event {
     isHidden: boolean;
     maxGroupSize: number;
     roles: Map<string, string>;
-    meta?: string;
+    meta: string;
     addGroup(this: DocumentType<Event>, name: string, role: string, channels?: string[]): Promise<DocumentType<Group, import("@typegoose/typegoose/lib/types").BeAnObject>>;
     getInviteIndex(this: DocumentType<Event>, invite: Ref<Invite, Types.ObjectId>): number;
     hasInvite(this: DocumentType<Event>, invite: Ref<Invite, Types.ObjectId>): boolean;
