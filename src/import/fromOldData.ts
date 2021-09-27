@@ -31,10 +31,10 @@ export const parseOldData = async (
   const invites: InviteItem[] = data.map((item) => ({
     email: item.mail,
     role: item.role,
-    meta: JSON.stringify({
+    meta: {
       location: item.location,
       name: item.name,
-    }),
+    },
   }));
 
   const users: UserItem[] = data

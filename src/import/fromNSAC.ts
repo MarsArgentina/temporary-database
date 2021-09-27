@@ -28,11 +28,11 @@ export const parseNSAC = async (
 
   return data.map((item) => ({
     email: item.Email,
-    meta: JSON.stringify({
+    meta: {
       location: item.Location,
       name: item.Name,
       registrationDate: item["Registration Date"],
-    }),
+    },
   }));
 };
 

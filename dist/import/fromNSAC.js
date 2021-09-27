@@ -50,11 +50,11 @@ var parseNSAC = function (file) { return __awaiter(void 0, void 0, void 0, funct
         data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
         return [2 /*return*/, data.map(function (item) { return ({
                 email: item.Email,
-                meta: JSON.stringify({
+                meta: {
                     location: item.Location,
                     name: item.Name,
                     registrationDate: item["Registration Date"],
-                }),
+                },
             }); })];
     });
 }); };

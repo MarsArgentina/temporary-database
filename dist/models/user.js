@@ -184,6 +184,9 @@ var User = /** @class */ (function () {
                         if (!resolved)
                             return [2 /*return*/, null];
                         this.forcedResolveInvite(event, invite);
+                        return [4 /*yield*/, invite.save()];
+                    case 2:
+                        _a.sent();
                         return [2 /*return*/, invite];
                 }
             });

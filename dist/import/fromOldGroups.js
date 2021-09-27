@@ -57,11 +57,12 @@ var importOldGroups = function (event, info) { return __awaiter(void 0, void 0, 
                     var name = _a.name, channels = _a.channels, role = _a.role, invites = _a.invites, meta = _a.meta;
                     return __awaiter(void 0, void 0, void 0, function () {
                         var group, results, e_1;
-                        return __generator(this, function (_b) {
-                            switch (_b.label) {
+                        var _b;
+                        return __generator(this, function (_c) {
+                            switch (_c.label) {
                                 case 0: return [4 /*yield*/, event.addGroup(name, role, channels)];
                                 case 1:
-                                    group = _b.sent();
+                                    group = _c.sent();
                                     return [4 /*yield*/, Promise.all(invites.map(function (discord) { return __awaiter(void 0, void 0, void 0, function () {
                                             var user, invite, e_2;
                                             return __generator(this, function (_a) {
@@ -88,20 +89,20 @@ var importOldGroups = function (event, info) { return __awaiter(void 0, void 0, 
                                             });
                                         }); }))];
                                 case 2:
-                                    results = _b.sent();
-                                    group.meta = JSON.stringify(__assign(__assign({}, JSON.parse(group.meta)), meta));
-                                    _b.label = 3;
+                                    results = _c.sent();
+                                    group.meta = JSON.stringify(__assign(__assign({}, JSON.parse((_b = group.meta) !== null && _b !== void 0 ? _b : "{}")), meta));
+                                    _c.label = 3;
                                 case 3:
-                                    _b.trys.push([3, 5, , 6]);
+                                    _c.trys.push([3, 5, , 6]);
                                     return [4 /*yield*/, group.save()];
                                 case 4:
-                                    _b.sent();
+                                    _c.sent();
                                     return [2 /*return*/, {
                                             invites: results.length,
                                             success: results.filter(function (value) { return value; }).length,
                                         }];
                                 case 5:
-                                    e_1 = _b.sent();
+                                    e_1 = _c.sent();
                                     console.error(e_1);
                                     return [2 /*return*/, {
                                             invites: results.length,

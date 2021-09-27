@@ -36,7 +36,7 @@ export const importOldGroups = async (
         })
       );
 
-      group.meta = JSON.stringify({ ...JSON.parse(group.meta), ...meta });
+      group.meta = JSON.stringify({ ...JSON.parse(group.meta ?? "{}"), ...meta });
 
       try {
         await group.save();

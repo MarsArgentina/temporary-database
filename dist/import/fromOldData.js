@@ -64,10 +64,10 @@ var parseOldData = function (file) { return __awaiter(void 0, void 0, void 0, fu
         invites = data.map(function (item) { return ({
             email: item.mail,
             role: item.role,
-            meta: JSON.stringify({
+            meta: {
                 location: item.location,
                 name: item.name,
-            }),
+            },
         }); });
         users = data
             .filter(function (item) { return Boolean(item.memberid); })

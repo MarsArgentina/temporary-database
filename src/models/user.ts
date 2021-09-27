@@ -167,6 +167,7 @@ export class User {
     if (!resolved) return null;
 
     this.forcedResolveInvite(event, invite);
+    await invite.save();
 
     return invite;
   }
