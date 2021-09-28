@@ -4,6 +4,7 @@ import { Group } from "./group";
 import { AddInvitesOptions, AddInvitesResult, Invite, InviteItem } from "./invite";
 export declare class Event {
     name: string;
+    category: string;
     invites: Ref<Invite, Types.ObjectId>[];
     groups: Ref<Group, Types.ObjectId>[];
     isHidden: boolean;

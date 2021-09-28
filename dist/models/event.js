@@ -252,6 +252,10 @@ var Event = /** @class */ (function () {
         __metadata("design:type", String)
     ], Event.prototype, "name", void 0);
     __decorate([
+        (0, typegoose_1.prop)({ required: true }),
+        __metadata("design:type", String)
+    ], Event.prototype, "category", void 0);
+    __decorate([
         (0, typegoose_1.prop)({ ref: function () { return "Invite"; }, required: true, default: function () { return []; } }),
         __metadata("design:type", Array)
     ], Event.prototype, "invites", void 0);

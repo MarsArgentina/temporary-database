@@ -22,6 +22,9 @@ export class Event {
   @prop({ required: true, unique: true })
   name!: string;
 
+  @prop({ required: true })
+  category!: string;
+
   @prop({ ref: () => "Invite", required: true, default: () => [] })
   invites!: Ref<Invite, Types.ObjectId>[];
 

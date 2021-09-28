@@ -1,3 +1,3 @@
 export * from "./fromOldData";
 export * from "./fromNSAC";
-export * from "./fromOldGroups";
+export * from "./fromGroupInfo";

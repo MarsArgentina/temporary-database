@@ -12,4 +12,4 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./fromOldData"), exports);
 __exportStar(require("./fromNSAC"), exports);
-__exportStar(require("./fromOldGroups"), exports);
+__exportStar(require("./fromGroupInfo"), exports);
