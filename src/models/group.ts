@@ -12,6 +12,9 @@ import { Event, EventModel } from "./event";
 import { generate as passwordGenerator } from "generate-password";
 
 export class Group {
+  @prop({ required: true })
+  name!: string;
+
   @prop({ ref: () => "Event", required: true })
   event!: Ref<Event, Types.ObjectId>;
 
@@ -41,7 +44,7 @@ export class Group {
   @prop({ required: true, default: false })
   isOpen!: boolean;
 
-  @prop({default: "{}"})
+  @prop({ default: "{}" })
   meta!: string;
 
   public getInviteIndex(

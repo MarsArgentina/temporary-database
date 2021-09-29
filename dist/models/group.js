@@ -123,6 +123,10 @@ var Group = /** @class */ (function () {
         return group.toString();
     };
     __decorate([
+        (0, typegoose_1.prop)({ required: true }),
+        __metadata("design:type", String)
+    ], Group.prototype, "name", void 0);
+    __decorate([
         (0, typegoose_1.prop)({ ref: function () { return "Event"; }, required: true }),
         __metadata("design:type", Object)
     ], Group.prototype, "event", void 0);
