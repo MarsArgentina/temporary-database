@@ -91,7 +91,9 @@ var Event = /** @class */ (function () {
                         })];
                     case 1:
                         group = _a.sent();
-                        group.save();
+                        return [4 /*yield*/, group.save()];
+                    case 2:
+                        _a.sent();
                         this.groups.push(group);
                         return [2 /*return*/, group];
                 }

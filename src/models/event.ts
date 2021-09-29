@@ -62,7 +62,7 @@ export class Event {
       channels,
     });
 
-    group.save();
+    await group.save();
 
     this.groups.push(group);
 
