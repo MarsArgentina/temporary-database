@@ -127,6 +127,10 @@ var Group = /** @class */ (function () {
         __metadata("design:type", String)
     ], Group.prototype, "name", void 0);
     __decorate([
+        (0, typegoose_1.prop)({ required: true, default: "", index: true }),
+        __metadata("design:type", String)
+    ], Group.prototype, "mainChannel", void 0);
+    __decorate([
         (0, typegoose_1.prop)({ ref: function () { return "Event"; }, required: true }),
         __metadata("design:type", Object)
     ], Group.prototype, "event", void 0);

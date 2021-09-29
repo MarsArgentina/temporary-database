@@ -4,6 +4,7 @@ import { Invite } from "./invite";
 import { Event } from "./event";
 export declare class Group {
     name: string;
+    mainChannel: string;
     event: Ref<Event, Types.ObjectId>;
     members: Ref<Invite, Types.ObjectId>[];
     channels: string[];

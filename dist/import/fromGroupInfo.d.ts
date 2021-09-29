@@ -2,6 +2,7 @@
 import { EventDocument } from "..";
 export declare type GroupInfo = {
     name: string;
+    mainChannel?: string;
     channels: string[];
     role: string;
     invites: {

@@ -15,6 +15,9 @@ export class Group {
   @prop({ required: true })
   name!: string;
 
+  @prop({required: true, default: "", index: true})
+  mainChannel!: string;
+
   @prop({ ref: () => "Event", required: true })
   event!: Ref<Event, Types.ObjectId>;
 

@@ -22,7 +22,7 @@ export class Event {
   @prop({ required: true, unique: true })
   name!: string;
 
-  @prop({ required: true })
+  @prop({ required: true, index: true, default: "" })
   category!: string;
 
   @prop({ ref: () => "Invite", required: true, default: () => [] })
@@ -51,12 +51,14 @@ export class Event {
     this: DocumentType<Event>,
     name: string,
     role: string,
+    mainChannel?: string,
     channels: string[] = []
   ) {
     const group = await GroupModel.create({
       event: this,
       name,
       role,
+      mainChannel,
       channels,
     });
 

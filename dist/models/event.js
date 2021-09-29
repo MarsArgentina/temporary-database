@@ -76,7 +76,7 @@ var invite_1 = require("./invite");
 var Event = /** @class */ (function () {
     function Event() {
     }
-    Event.prototype.addGroup = function (name, role, channels) {
+    Event.prototype.addGroup = function (name, role, mainChannel, channels) {
         if (channels === void 0) { channels = []; }
         return __awaiter(this, void 0, void 0, function () {
             var group;
@@ -86,6 +86,7 @@ var Event = /** @class */ (function () {
                             event: this,
                             name: name,
                             role: role,
+                            mainChannel: mainChannel,
                             channels: channels,
                         })];
                     case 1:
@@ -252,7 +253,7 @@ var Event = /** @class */ (function () {
         __metadata("design:type", String)
     ], Event.prototype, "name", void 0);
     __decorate([
-        (0, typegoose_1.prop)({ required: true }),
+        (0, typegoose_1.prop)({ required: true, index: true, default: "" }),
         __metadata("design:type", String)
     ], Event.prototype, "category", void 0);
     __decorate([

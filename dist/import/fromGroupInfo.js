@@ -84,13 +84,13 @@ var importGroupInfo = function (event, info) { return __awaiter(void 0, void 0, 
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, Promise.all(info.map(function (_a) {
-                    var name = _a.name, channels = _a.channels, role = _a.role, invites = _a.invites, meta = _a.meta;
+                    var name = _a.name, mainChannel = _a.mainChannel, channels = _a.channels, role = _a.role, invites = _a.invites, meta = _a.meta;
                     return __awaiter(void 0, void 0, void 0, function () {
                         var group, results, e_1;
                         var _b;
                         return __generator(this, function (_c) {
                             switch (_c.label) {
-                                case 0: return [4 /*yield*/, event.addGroup(name, role, channels)];
+                                case 0: return [4 /*yield*/, event.addGroup(name, role, mainChannel, channels)];
                                 case 1:
                                     group = _c.sent();
                                     return [4 /*yield*/, Promise.all(invites.map(function (_a) {

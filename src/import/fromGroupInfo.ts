@@ -4,6 +4,7 @@ import { guaranteeBuffer } from "../helpers";
 
 export type GroupInfo = {
   name: string;
+  mainChannel?: string;
   channels: string[];
   role: string;
   invites: { email: string }[];
@@ -65,8 +66,8 @@ export const importGroupInfo = async (
   info: GroupInfo[]
 ) => {
   const result = await Promise.all(
-    info.map(async ({ name, channels, role, invites, meta }) => {
-      const group = await event.addGroup(name, role, channels);
+    info.map(async ({ name, mainChannel, channels, role, invites, meta }) => {
+      const group = await event.addGroup(name, role, mainChannel, channels);
 
       const results = await Promise.all(
         invites.map(async ({ email }) => {
