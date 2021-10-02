@@ -6,6 +6,7 @@ export * from "./models/event";
 export * from "./models/user";
 export * from "./models/invite";
 export * from "./models/group";
+export * from "./models/time";
 export * from "./types/agerange";
 export declare type ConnectOptions = MongooseConnectOptions & {
     host?: string;

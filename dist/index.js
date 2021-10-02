@@ -40,6 +40,7 @@ __exportStar(require("./models/event"), exports);
 __exportStar(require("./models/user"), exports);
 __exportStar(require("./models/invite"), exports);
 __exportStar(require("./models/group"), exports);
+__exportStar(require("./models/time"), exports);
 __exportStar(require("./types/agerange"), exports);
 exports.Database = mongoose;
 var connect = function (_a) {
